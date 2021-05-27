@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/ivan/cvbridge_build_ws/install/include/**",
+        "/home/ivan/ros_ws/devel/include/**",
+        "/opt/ros/melodic/include/**",
+        "/home/ivan/grasping/robotology-superbuild/build/install/include/**",
+        "/home/ivan/grasping/robotology-superbuild/build/install/include/**",
+        "/home/ivan/ros_ws/src/get_obb/include/**",
+        "/home/ivan/ros_ws/src/gpd_ros/include/**",
+        "/home/ivan/ros_ws/src/point_cloud/include/**",
+        "/home/ivan/ros_ws/src/realsense_gazebo_plugin/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}
