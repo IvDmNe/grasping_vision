@@ -53,7 +53,6 @@ class segmentPC
     PointCloud stored_pc;
     bool receive_msg = false;
 
-
     public:
     segmentPC(ros::NodeHandle *nh)
     {
@@ -65,7 +64,7 @@ class segmentPC
 
     void sub_callback(const PointCloud::ConstPtr& msg)
     {
-        std::cout <<"received" << std::endl;
+        // std::cout <<"received" << std::endl;
         pcl::copyPointCloud(*msg, stored_pc);
         receive_msg = true;
     }
@@ -76,7 +75,6 @@ class segmentPC
         {
             std::cout<<"No data received"<<std::endl;
             return;
-
         }
         double downsample_voxel_size = 0.002;
     //     double distance_thresh = 1.0;
@@ -99,7 +97,7 @@ class segmentPC
         sor.filter (*cur_cloud);   
 
 
-        std::cout << cur_cloud->points.size() << std::endl;
+        // std::cout << cur_cloud->points.size() << std::endl;
         // Creating the KdTree object for the search method of the extraction
         pcl::search::KdTree<pcl::PointXYZRGB>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZRGB>);
         tree->setInputCloud (cur_cloud);
@@ -130,7 +128,7 @@ class segmentPC
                 // dst_cloud->points[idx].b = 0;
 
             }
-            std::cout << "cluster indices len: " << len_it << std::endl;
+            // std::cout << "cluster indices len: " << len_it << std::endl;
             // get bbox of point cloud
             pcl::PointXYZRGB minpoint;
             pcl::PointXYZRGB maxpoint;
@@ -174,13 +172,32 @@ class segmentPC
                 out_array.data.push_back(el);
             }
 
-            pub.publish(out_array);
+            // pub.publish(out_array);
 
             Eigen::Vector3f major_vector, middle_vector, minor_vector;
 	        Eigen::Vector3f mass_center;
 
             bbox_maker.getEigenVectors(major_vector, middle_vector, minor_vector);
 	        bbox_maker.getMassCenter(mass_center);
+
+            Eigen::Vector3f dims(maxpoint.x - minpoint.x, maxpoint.y - minpoint.y, maxpoint.z - minpoint.z);
+            
+            Eigen::VectorXf vec_joined(major_vector.size() + middle_vector.size() + mass_center.size() + dims.size());
+            vec_joined << major_vector, middle_vector, mass_center, dims;
+            
+            std_msgs::Float32MultiArray out_array1;
+            for(int i=0; i<vec_joined.size(); i++)
+                out_array1.data.push_back((vec_joined)[i]);
+
+            pub.publish(out_array1);
+                // cout << (*vec)[i];
+            // for (auto el: vec_joined.data())
+            // {
+            //     out_array1.data.push_back(el);
+            // }
+            
+            // std::vector<float> out_array1;
+            // out_array1.insert(out_array1.end(), major_vector.begin(), major_vector.end());
 
             // Eigen::Vector3f position_v(position.x, position.y, position.z);
             // Eigen::Quaternionf quat(rot_matrix);
@@ -198,8 +215,9 @@ class segmentPC
         }
 
         auto end = std::chrono::high_resolution_clock::now();
-        auto dur = end - start;
-        std::cout << std::chrono::duration_cast<std::chrono::milliseconds> (dur).count() << std::endl <<std::endl;
+        auto dur = std::chrono::duration_cast<std::chrono::milliseconds> (end-start).count();
+
+        std::cout << "FPS: " << 1000 / double(dur) << std::endl;
 
         // pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cur_cloud);
         // viewer->addPointCloud<pcl::PointXYZRGB> (cur_cloud, rgb, "sample cloud");  
