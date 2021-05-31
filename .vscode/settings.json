@@ -93,5 +93,6 @@
         "/opt/ros/melodic/lib/python2.7/dist-packages",
         "/home/ivan/cvbridge_build_ws/install/lib/python3/dist-packages"
     ],
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "python.pythonPath": "/home/ivan/anaconda3/bin/python"
 }
