@@ -7,9 +7,11 @@ It has several steps:
 4. Find coefficients of a plane on point cloud of complete scene
 
 ## Dependencies
-RO melodic
+ROS melodic
 
 For Python scripts run conda env create -f scripts/segm.yaml
+
+Additionally, install opencv_bridge for ROS.
 
 For C++:
 -PCL
