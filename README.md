@@ -1,7 +1,7 @@
 # Description
 This repo contains ROS nodes for processing RGB-D data from Intel realsense d435.
 It has several steps:
-1. segment rgb image and get mask of one object
+1. segment rgb image and get mask of one object using Mask R-CNN for segmentation and KNN for classification with iterative learning
 2. After applying mask on rgb and depth image get point cloud of an object
 3. Find Oriented bounding box of point cloud (with outlier removal)
 4. Find coefficients of a plane on point cloud of complete scene
