@@ -1,0 +1,6 @@
+<launch>
+    <include file="rs_aligned_depth.launch"/>
+    <include file="rgbd_to_pc.launch"/>
+    <node name="segmentation_node" type="segmentation_node.py" pkg="pc_proc"/>
+
+</launch>

@@ -2,3 +2,7 @@ build/
 .editorconfig
 
 *.pyc
+
+.vscode/settings.json
+
+scripts/knn_data_1.pth

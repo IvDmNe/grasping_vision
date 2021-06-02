@@ -1,3 +1,5 @@
+#!/home/ivan/anaconda3/bin/python
+
 from models.segmentation_net import *
 from models.knn import *
 
@@ -52,7 +54,7 @@ class ImageListener:
         self.cv_bridge = CvBridge()
 
         # initialize a node
-        rospy.init_node("sod")
+        rospy.init_node("sod", log_level=rospy.INFO)
         self.rgb_pub = rospy.Publisher('/rgb_masked', Image, queue_size=10)
         self.depth_pub = rospy.Publisher('/depth_masked', Image, queue_size=10)
         self.segmented_view_pub = rospy.Publisher(
@@ -68,12 +70,8 @@ class ImageListener:
         depth_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw',
                                                Image, queue_size=10)
 
-        # rospy.Service('/command_from_human',
-        #               String, self.callback_mode)
         rospy.Subscriber('/command_from_human',
                          String, self.callback_mode)
-
-        # cv.namedWindow('main', cv.WINDOW_GUI_EXPANDED)
 
         self.seg_net = seg()
         self.classifier = knn_torch(datafile='knn_data.pth')
@@ -99,7 +97,7 @@ class ImageListener:
                     depth.encoding))
             return
 
-        im = self.cv_bridge.imgmsg_to_cv2(rgb, 'rgb8')
+        im = self.cv_bridge.imgmsg_to_cv2(rgb, 'bgr8')
 
         with lock:
             self.im = im.copy()
@@ -116,8 +114,6 @@ class ImageListener:
             image)
 
         masked_image = image.copy()
-
-        # nms(proposal_boxes, )
 
         for box in proposal_boxes:
 
@@ -141,7 +137,8 @@ class ImageListener:
             return
 
         # decrease dimension of features by global pooling
-        features = F.max_pool2d(
+        # print(seg_mask_features.shape)
+        features = F.avg_pool2d(
             seg_mask_features, kernel_size=seg_mask_features.size()[2:])
 
         mask = get_one_mask(
@@ -153,7 +150,7 @@ class ImageListener:
         rgb_msg = self.cv_bridge.cv2_to_imgmsg(image_masked)
         rgb_msg.header.stamp = rospy.Time.now()
         # rgb_msg.header.frame_id = rgb_frame_id
-        rgb_msg.encoding = 'rgb8'
+        rgb_msg.encoding = 'bgr8'
         self.rgb_pub.publish(rgb_msg)
 
         depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_masked)
@@ -165,7 +162,7 @@ class ImageListener:
         mask_msg = self.cv_bridge.cv2_to_imgmsg(image_segmented)
         mask_msg.header.stamp = rospy.Time.now()
         # mask_msg.header.frame_id = rgb_frame_id
-        mask_msg.encoding = 'rgb8'
+        mask_msg.encoding = 'bgr8'
         self.segmented_view_pub.publish(mask_msg)
 
     def save_data(self, features, cl, im_shape, boxes):
@@ -194,6 +191,10 @@ class ImageListener:
             # rgb_frame_stamp = self.rgb_frame_stamp
 
         # segment rgb image
+        image = cv.resize(image, (640, 480))
+        depth = cv.resize(depth, (640, 480))
+        # cv.imshow('im', image)
+        # cv.waitKey()
         ret_seg = self.do_segmentation(image)
         if ret_seg:
             features, boxes, image_segmented, mask = ret_seg
@@ -214,18 +215,18 @@ class ImageListener:
             rospy.logerr_throttle(
                 1, f'invalid working mode: {self.working_mode}')
             return
+        else:
+            classes = self.classifier.classify(features.squeeze())
 
-        classes = self.classifier.classify(features.squeeze())
+            if isinstance(classes, str):
+                classes = [classes]
+            if classes:
+                # draw labels
+                for cl, box in zip(classes, boxes):
 
-        if isinstance(classes, str):
-            classes = [classes]
-        if classes:
-            # draw labels
-            for cl, box in zip(classes, boxes):
-
-                pt = (box[:2].round().long()) - 1
-                cv.putText(image_segmented, cl, tuple(pt),
-                           cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                    pt = (box[:2].round().long()) - 1
+                    cv.putText(image_segmented, cl, tuple(pt),
+                               cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
         # NOT IMPLEMENTED
         # classify each mask and draw labels
