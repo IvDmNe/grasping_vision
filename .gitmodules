@@ -1,0 +1,3 @@
+[submodule "point_cloud_processing"]
+	path = src/eigen
+	url = https://gitlab.com/libeigen/eigen.git
