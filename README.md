@@ -6,6 +6,12 @@ It has several steps:
 3. Find Oriented bounding box of point cloud (with outlier removal)
 4. Find coefficients of a plane on point cloud of complete scene
 
+## Dependencies
+-ROS
+-For Python scripts run conda env create -f scripts/segm.yaml
+-For C++:
+--PCL
+--Eigen
 ## Run 
 1. roslaunch launch/launch_them_all.launch
 2. rosrun scripts/command_node.py (in another terminal)
