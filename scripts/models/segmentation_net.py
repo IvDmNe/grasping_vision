@@ -10,6 +10,7 @@ import torch
 import numpy as np
 # from detectron2.layers.nms import batched_nms
 from torchvision.ops import nms
+import rospy
 
 
 class seg:
@@ -84,7 +85,21 @@ class seg:
             new_prop = Instances(image.shape[:-1])
             new_prop.proposal_boxes = proposals[0].proposal_boxes[ids][inds_after_nms]
             new_prop.objectness_logits = proposals[0].objectness_logits[ids][inds_after_nms]
+
             instances, _ = self.predictor.model.roi_heads(
                 t_image, features, [new_prop])
 
-            return proposals[0].proposal_boxes[ids][inds_after_nms], mask_features, instances[0]
+            insts_inds_after_nms = nms(
+                instances[0].pred_boxes.tensor, instances[0].scores, 0.8)
+
+            # rospy.logerr(insts_inds_after_nms)
+            # rospy.logerr(instances[0].pred_boxes.tensor[insts_inds_after_nms])
+
+            # rospy.logerr(new_prop)
+            # rospy.logerr(instances[0].pred_boxes)
+            # rospy.logerr(instances.pred_boxes)
+
+            # rospy.logerr(proposals[0].proposal_boxes[ids][inds_after_nms])
+            # rospy.logerr(instances[0][insts_inds_after_nms].pred_boxes)
+
+            return proposals[0].proposal_boxes[ids][inds_after_nms], mask_features, instances[0][insts_inds_after_nms]

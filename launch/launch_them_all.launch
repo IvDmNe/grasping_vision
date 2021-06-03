@@ -1,6 +1,8 @@
 <launch>
-    <include file="rs_aligned_depth.launch"/>
-    <include file="rgbd_to_pc.launch"/>
+    <include file="$(find pc_proc)/launch/rs_aligned_depth.launch"/>
+    <include file="$(find pc_proc)/launch/rgbd_to_pc.launch"/>
     <node name="segmentation_node" type="segmentation_node.py" pkg="pc_proc"/>
+    <node name="plane_segment" type="pc_proc_plane_segment" pkg="pc_proc"/>
+    <node name="get_obb" type="pc_proc_get_obb" pkg="pc_proc"/>
 
 </launch>

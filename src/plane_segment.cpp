@@ -55,7 +55,7 @@ class segmentPC {
 
 		pub = nh->advertise<std_msgs::Float32MultiArray>("/plane_coeffs", 1);
 
-		printf("Init completed!");
+		printf("plane segmentation node: Init completed!");
 	}
 
 	void sub_callback(const PointCloud::ConstPtr& msg) {
@@ -65,7 +65,7 @@ class segmentPC {
 
 	void loop() {
 		if (!receive_msg) {
-			std::cout << "No data received" << std::endl;
+			// std::cout << "No data received" << std::endl;
 			return;
 		}
 		double downsample_voxel_size = 0.002;
@@ -132,13 +132,13 @@ class segmentPC {
 		seg.setInputCloud(cloud_near);
 		seg.segment(*inliers, *coefficients);
 
-		std::cerr << "Model coefficients: " << coefficients->values[0] << " "
-							<< coefficients->values[1] << " " << coefficients->values[2]
-							<< " " << coefficients->values[3] << std::endl;
+		// std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+		// 					<< coefficients->values[1] << " " << coefficients->values[2]
+		// 					<< " " << coefficients->values[3] << std::endl;
 
 		
 		if (inliers->indices.size() == 0) {
-			PCL_ERROR("Could not estimate a planar model for the given dataset.");
+			PCL_ERROR("Could not estimate a planar model for the given data");
 			return;
 		}
 

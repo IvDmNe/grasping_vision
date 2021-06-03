@@ -31,6 +31,9 @@ from detectron2.utils.logger import setup_logger
 from detectron2.utils.colormap import random_color
 
 from scipy.spatial.distance import euclidean
+from detectron2.utils.colormap import colormap
+import matplotlib.pyplot as plt
+
 
 setup_logger()
 
@@ -74,13 +77,16 @@ class ImageListener:
                          String, self.callback_mode)
 
         self.seg_net = seg()
-        self.classifier = knn_torch(datafile='knn_data.pth')
+        self.classifier = knn_torch(
+            datafile='/home/ivan/ros_ws/src/pc_proc/scripts/knn_data.pth')
 
         ts = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], 1, 0.1)
         ts.registerCallback(self.callback_rgbd)
 
-        rospy.loginfo('init complete')
+        self.colors = colormap()
+
+        rospy.loginfo('Segmentaion node: Init complete')
 
     def callback_rgbd(self, rgb, depth):
         self.depth_encoding = depth.encoding
@@ -113,38 +119,37 @@ class ImageListener:
         proposal_boxes, seg_mask_features, instances = self.seg_net.forward(
             image)
 
-        masked_image = image.copy()
+        # for box in proposal_boxes:
 
-        for box in proposal_boxes:
-
-            pts = box.detach().cpu().long()
-            cv.rectangle(masked_image, (pts[0], pts[1]),
-                         (pts[2], pts[3]), (255, 0, 0), 2)
+        # pts = box.detach().cpu().long()
+        # cv.rectangle(masked_image, (pts[0], pts[1]),
+        #              (pts[2], pts[3]), (255, 0, 0), 2)
 
         # draw object masks
-        for box, mask in zip(instances.pred_boxes, instances.pred_masks):
-            x1, y1, x2, y2 = box.round().long()
-            sz = (x2 - x1, y2 - y1)
+        # for box, mask in zip(instances.pred_boxes, instances.pred_masks):
+        #     x1, y1, x2, y2 = box.round().long()
+        #     sz = (x2 - x1, y2 - y1)
 
-            mask_rs = cv.resize(mask.squeeze().detach().cpu().numpy(), sz)
+        #     mask_rs = cv.resize(mask.squeeze().detach().cpu().numpy(), sz)
 
-            cur_mask = np.zeros((image.shape[:-1]))
-            cur_mask[y1:y2, x1:x2] = mask_rs
-            masked_image[cur_mask > 0.5] = (0, 255, 255)
+        #     cur_mask = np.zeros((image.shape[:-1]))
+        #     cur_mask[y1:y2, x1:x2] = mask_rs
+        #     masked_image[cur_mask > 0.5] = (0, 255, 255)
 
         if len(seg_mask_features) == 0 or len(instances.pred_boxes.tensor) == 0:
             rospy.logerr_throttle(2, 'no objects found')
             return
 
         # decrease dimension of features by global pooling
-        # print(seg_mask_features.shape)
         features = F.avg_pool2d(
             seg_mask_features, kernel_size=seg_mask_features.size()[2:])
 
-        mask = get_one_mask(
-            instances.pred_boxes.tensor.round().long().detach().cpu().numpy(), instances.pred_masks, image).astype(np.uint8)
+        # mask = get_one_mask(
+        #     instances.pred_boxes.tensor.round().long().detach().cpu().numpy(), instances.pred_masks, image).astype(np.uint8)
 
-        return features, proposal_boxes.tensor, masked_image, mask
+        # return features, proposal_boxes.tensor, masked_image, mask, instances.pred_masks
+        # return features, proposal_boxes.tensor, instances.pred_masks
+        return features, instances.pred_boxes.tensor, instances.pred_masks
 
     def send_images_to_topics(self, image_masked, depth_masked, image_segmented):
         rgb_msg = self.cv_bridge.cv2_to_imgmsg(image_masked)
@@ -169,11 +174,10 @@ class ImageListener:
 
         center_idx = get_nearest_to_center_box(
             im_shape, boxes.cpu().numpy())
-        # classes = [self.working_mode.split(
-        #     ' ')[1] for _ in range(features.shape[0]]
 
         # check if bounding box is very different from previous
         if self.check_sim(boxes[center_idx].cpu().numpy()):
+            # self.x_data_to_save.append([features[center_idx].squeeze().unsqueeze(0), [cl]])
             self.classifier.add_points(
                 features[center_idx].squeeze().unsqueeze(0), [cl])
 
@@ -195,9 +199,10 @@ class ImageListener:
         depth = cv.resize(depth, (640, 480))
         # cv.imshow('im', image)
         # cv.waitKey()
+        image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
         if ret_seg:
-            features, boxes, image_segmented, mask = ret_seg
+            features, boxes, pred_masks = ret_seg
         else:
             return
 
@@ -218,21 +223,48 @@ class ImageListener:
         else:
             classes = self.classifier.classify(features.squeeze())
 
+            # rospy.logerr((len(classes), len(boxes), len(pred_masks)))
             if isinstance(classes, str):
                 classes = [classes]
             if classes:
-                # draw labels
-                for cl, box in zip(classes, boxes):
+                # draw labels and masks
+                for cl, box, m in zip(classes, boxes, pred_masks):
+                    idx = self.classifier.classes.index(cl)
+                    c = self.colors[idx].astype(np.uint8).tolist()
 
+                    # draw bounding box
+                    pts = box.detach().cpu().long()
+                    cv.rectangle(image_segmented, (pts[0], pts[1]),
+                                 (pts[2], pts[3]), c, 2)
+
+                    # draw label
                     pt = (box[:2].round().long()) - 1
                     cv.putText(image_segmented, cl, tuple(pt),
-                               cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                               cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
+
+                    # draw object masks
+                    x1, y1, x2, y2 = box.round().long()
+                    sz = (x2 - x1, y2 - y1)
+
+                    mask_rs = cv.resize(
+                        m.squeeze().detach().cpu().numpy(), sz)
+
+                    cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+                    cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+                    cntrs, _ = cv.findContours(
+                        cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+                    cv.drawContours(image_segmented, cntrs, -
+                                    1, c, 2)
+                mask = get_one_mask(
+                    boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
 
         # NOT IMPLEMENTED
         # classify each mask and draw labels
         # currently one random mask is chosen
 
         # apply masking
+
         image_masked = cv.bitwise_and(image, image, mask=mask)
         depth_masked = cv.bitwise_and(depth, depth, mask=mask)
 
@@ -240,7 +272,7 @@ class ImageListener:
 
         end = time.time()
         fps = 1 / (end - start)
-        rospy.loginfo(f'FPS: {fps:.2f}')
+        rospy.logwarn(f'FPS: {fps:.2f}')
 
     def check_sim(self, box):
         box_center = ((box[3] + box[1]) // 2, (box[2] + box[0]) // 2)

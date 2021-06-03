@@ -8,6 +8,7 @@ class knn_torch:
         self.x_data = None
         self.y_data = None
         self.save_file = save_file
+        self.classes = None
 
         if datafile:
             print(f'loading data from file: {datafile}')
@@ -19,8 +20,8 @@ class knn_torch:
                 print(
                     f'Found {self.x_data.shape[0]} points with {len(set(self.y_data))} classes')
                 print(pd.Series(self.y_data).value_counts())
+                self.classes = list(set(self.y_data))
 
-                # print(f"Known classes: {set(self.y_data)}")
                 if torch.cuda.is_available():
                     self.x_data = self.x_data.cuda()
             else:
@@ -35,7 +36,7 @@ class knn_torch:
         else:
             self.x_data = torch.cat([self.x_data, x])
             self.y_data = self.y_data + y
-
+        self.classes = list(set(self.y_data))
         # print(x.shape, self.x_data.shape)
         torch.save({'x': self.x_data.detach().cpu(),
                     'y': self.y_data}, self.save_file)
