@@ -9,7 +9,7 @@ It has several steps:
 ## Dependencies
 ROS melodic
 
-For Python scripts run conda env create -f scripts/segm.yaml
+For Python scripts run: conda env create -f scripts/segm.yaml
 
 Additionally, install opencv_bridge for ROS (i.e. from https://cyaninfinite.com/ros-cv-bridge-with-python-3/)
 
