@@ -238,7 +238,7 @@ class ImageListener:
                                  (pts[2], pts[3]), c, 2)
 
                     # draw label
-                    pt = (box[:2].round().long()) - 1
+                    pt = (box[:2].round().long()) - 2
                     cv.putText(image_segmented, cl, tuple(pt),
                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
@@ -272,7 +272,7 @@ class ImageListener:
 
         end = time.time()
         fps = 1 / (end - start)
-        rospy.logwarn(f'FPS: {fps:.2f}')
+        rospy.loginfo(f'FPS: {fps:.2f}')
 
     def check_sim(self, box):
         box_center = ((box[3] + box[1]) // 2, (box[2] + box[0]) // 2)
