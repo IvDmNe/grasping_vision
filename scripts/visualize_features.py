@@ -14,8 +14,6 @@ def removeOutliers(x, outlierConstant):
     IQR = (upper_quartile - lower_quartile) * outlierConstant
     quartileSet = (lower_quartile - IQR, upper_quartile + IQR)
 
-    # result = a[np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))]
-
     return np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))
 
 

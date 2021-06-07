@@ -33,7 +33,7 @@ from detectron2.utils.colormap import random_color
 from scipy.spatial.distance import euclidean
 from detectron2.utils.colormap import colormap
 import matplotlib.pyplot as plt
-
+import torch
 
 setup_logger()
 
@@ -53,6 +53,8 @@ class ImageListener:
         self.working_mode = 'inference'
         self.depth_encoding = None
         self.prev_training_mask_info = None
+        self.x_data_to_save = None
+        self.prev_mode = 'inference'
 
         self.cv_bridge = CvBridge()
 
@@ -112,7 +114,9 @@ class ImageListener:
             self.rgb_frame_stamp = rgb.header.stamp
 
     def callback_mode(self, mode):
+        self.prev_mode = self.working_mode
         self.working_mode = mode.data
+        rospy.logwarn(f"changing working mode to {self.working_mode}")
 
     def do_segmentation(self, image):
 
@@ -151,24 +155,25 @@ class ImageListener:
         # return features, proposal_boxes.tensor, instances.pred_masks
         return features, instances.pred_boxes.tensor, instances.pred_masks
 
-    def send_images_to_topics(self, image_masked, depth_masked, image_segmented):
-        rgb_msg = self.cv_bridge.cv2_to_imgmsg(image_masked)
-        rgb_msg.header.stamp = rospy.Time.now()
-        # rgb_msg.header.frame_id = rgb_frame_id
-        rgb_msg.encoding = 'bgr8'
-        self.rgb_pub.publish(rgb_msg)
-
-        depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_masked)
-        depth_msg.header.stamp = rospy.Time.now()
-        # depth_msg.header.frame_id = rgb_frame_id
-        depth_msg.encoding = '32FC1'
-        self.depth_pub.publish(depth_msg)
-
-        mask_msg = self.cv_bridge.cv2_to_imgmsg(image_segmented)
-        mask_msg.header.stamp = rospy.Time.now()
-        # mask_msg.header.frame_id = rgb_frame_id
-        mask_msg.encoding = 'bgr8'
-        self.segmented_view_pub.publish(mask_msg)
+    def send_images_to_topics(self, image_masked=None, depth_masked=None, image_segmented=None):
+        if image_masked is not None:
+            rgb_msg = self.cv_bridge.cv2_to_imgmsg(image_masked)
+            rgb_msg.header.stamp = rospy.Time.now()
+            # rgb_msg.header.frame_id = rgb_frame_id
+            rgb_msg.encoding = 'bgr8'
+            self.rgb_pub.publish(rgb_msg)
+        if depth_masked is not None:
+            depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_masked)
+            depth_msg.header.stamp = rospy.Time.now()
+            # depth_msg.header.frame_id = rgb_frame_id
+            depth_msg.encoding = '32FC1'
+            self.depth_pub.publish(depth_msg)
+        if image_segmented is not None:
+            mask_msg = self.cv_bridge.cv2_to_imgmsg(image_segmented)
+            mask_msg.header.stamp = rospy.Time.now()
+            # mask_msg.header.frame_id = rgb_frame_id
+            mask_msg.encoding = 'bgr8'
+            self.segmented_view_pub.publish(mask_msg)
 
     def save_data(self, features, cl, im_shape, boxes):
 
@@ -177,13 +182,19 @@ class ImageListener:
 
         # check if bounding box is very different from previous
         if self.check_sim(boxes[center_idx].cpu().numpy()):
-            # self.x_data_to_save.append([features[center_idx].squeeze().unsqueeze(0), [cl]])
-            self.classifier.add_points(
-                features[center_idx].squeeze().unsqueeze(0), [cl])
+            if self.x_data_to_save == None:
+                self.x_data_to_save = features[center_idx].squeeze(
+                ).unsqueeze(0)
+            else:
+                self.x_data_to_save = torch.cat(
+                    [self.x_data_to_save, features[center_idx].squeeze().unsqueeze(0)])
 
     def run_proc(self):
 
         start = time.time()
+
+        image_masked = None
+        depth_masked = None
 
         with lock:
             if self.im is None:
@@ -191,14 +202,11 @@ class ImageListener:
                 return
             image = self.im.copy()
             depth = self.depth.copy()
-            # rgb_frame_id = self.rgb_frame_id
-            # rgb_frame_stamp = self.rgb_frame_stamp
 
         # segment rgb image
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
-        # cv.imshow('im', image)
-        # cv.waitKey()
+
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
         if ret_seg:
@@ -215,15 +223,13 @@ class ImageListener:
             cl = self.working_mode.split(
                 ' ')[1]
             self.save_data(features, cl, image.shape, boxes)
-            # return
-        elif self.working_mode != 'inference':
-            rospy.logerr_throttle(
-                1, f'invalid working mode: {self.working_mode}')
-            return
-        else:
+
+        elif self.working_mode == 'inference':
+            if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
+                self.feed_features_to_classifier()
+
             classes = self.classifier.classify(features.squeeze())
 
-            # rospy.logerr((len(classes), len(boxes), len(pred_masks)))
             if isinstance(classes, str):
                 classes = [classes]
             if classes:
@@ -256,23 +262,45 @@ class ImageListener:
 
                     cv.drawContours(image_segmented, cntrs, -
                                     1, c, 2)
+
                 mask = get_one_mask(
                     boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
+                # apply masking
+                # image_masked = cv.bitwise_and(image, image, mask=mask)
+                # depth_masked = cv.bitwise_and(depth, depth, mask=mask)
 
-        # NOT IMPLEMENTED
-        # classify each mask and draw labels
-        # currently one random mask is chosen
+        elif self.working_mode.split(' ')[0] == 'give':
+            demand_class = self.working_mode.split(' ')[1]
+            rospy.logwarn(f'Command: {self.working_mode}')
+            self.working_mode = 'inference'
+            classes = self.classifier.classify(features.squeeze())
 
-        # apply masking
+            if isinstance(classes, str):
+                classes = [classes]
 
-        image_masked = cv.bitwise_and(image, image, mask=mask)
-        depth_masked = cv.bitwise_and(depth, depth, mask=mask)
+            if classes:
+                if not (demand_class in classes):
+                    rospy.logwarn(
+                        f'object: {demand_class} not found among {classes}')
+                    return
+
+                idx = classes.index(demand_class)
+                mask = get_one_mask(
+                    boxes.cpu().int().numpy(), pred_masks, image, idx).astype(np.uint8)
+                # apply masking
+                image_masked = cv.bitwise_and(image, image, mask=mask)
+                depth_masked = cv.bitwise_and(depth, depth, mask=mask)
+
+        else:
+            rospy.logerr_throttle(
+                1, f'invalid working mode: {self.working_mode}')
+            return
 
         self.send_images_to_topics(image_masked, depth_masked, image_segmented)
 
         end = time.time()
         fps = 1 / (end - start)
-        rospy.loginfo(f'FPS: {fps:.2f}')
+        rospy.logwarn(f'FPS: {fps:.2f}')
 
     def check_sim(self, box):
         box_center = ((box[3] + box[1]) // 2, (box[2] + box[0]) // 2)
@@ -290,6 +318,21 @@ class ImageListener:
             self.prev_training_mask_info = box_center
             return True
 
+    def feed_features_to_classifier(self):
+        # feed saved features to classifier when working mode is change to "inference"
+
+        rospy.logwarn('saving features')
+
+        # inl_inds = removeOutliers(self.x_data_to_save.cpu(), 1.5)
+        # self.x_data_to_save = self.x_data_to_save[inl_inds]
+        # print(self.x_data_to_save.shape)
+
+        self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
+            1]] * self.x_data_to_save.shape[0])
+
+        self.x_data_to_save = None
+        self.prev_mode = 'inference'
+
 
 def get_nearest_to_center_box(im_shape, boxes):
     center = np.array(im_shape[:-1]) // 2
@@ -305,8 +348,11 @@ def get_nearest_to_center_box(im_shape, boxes):
     return min_idx
 
 
-def get_one_mask(boxes, mask, image):
-    cent_ix = get_nearest_to_center_box(image.shape, boxes)
+def get_one_mask(boxes, mask, image, n_mask=None):
+    if n_mask is None:
+        cent_ix = get_nearest_to_center_box(image.shape, boxes)
+    else:
+        cent_ix = n_mask
     x1, y1, x2, y2 = boxes[cent_ix]
     sz = (x2 - x1, y2 - y1)
     mask_rs = cv.resize(mask[cent_ix].squeeze().detach().cpu().numpy(), sz)
@@ -314,6 +360,16 @@ def get_one_mask(boxes, mask, image):
     cur_mask = np.zeros((image.shape[: -1]))
     cur_mask[y1: y2, x1: x2] = mask_rs
     return cv.threshold(cur_mask, 0.5, 1.0, cv.THRESH_BINARY)[1]
+
+
+def removeOutliers(x, outlierConstant):
+    a = np.array(x)
+    upper_quartile = np.percentile(a, 75)
+    lower_quartile = np.percentile(a, 25)
+    IQR = (upper_quartile - lower_quartile) * outlierConstant
+    quartileSet = (lower_quartile - IQR, upper_quartile + IQR)
+
+    return np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))
 
 
 if __name__ == '__main__':

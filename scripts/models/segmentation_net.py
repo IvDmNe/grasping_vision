@@ -79,15 +79,22 @@ class seg:
             inds_after_nms = nms(
                 proposals[0].proposal_boxes[ids].tensor.cpu(), proposals[0].objectness_logits[ids].cpu(), 0.3)
 
-            mask_features = self.predictor.model.roi_heads.mask_pooler(
-                mask_features, [proposals[0].proposal_boxes[ids][inds_after_nms]])
+            # mask_features = self.predictor.model.roi_heads.mask_pooler(
+            #     mask_features, [proposals[0].proposal_boxes[ids][inds_after_nms]])
 
-            new_prop = Instances(image.shape[:-1])
-            new_prop.proposal_boxes = proposals[0].proposal_boxes[ids][inds_after_nms]
-            new_prop.objectness_logits = proposals[0].objectness_logits[ids][inds_after_nms]
+            # rospy.logerr(mask_features.shape)
+            # rospy.logerr(len(proposals[0].proposal_boxes[ids][inds_after_nms]))
 
+            new_prop = proposals[0][ids][inds_after_nms]
+
+            # rospy.logerr(features)
+            # rospy.logerr(new_prop.proposal_boxes.tensor.shape)
             instances, _ = self.predictor.model.roi_heads(
                 t_image, features, [new_prop])
+            # rospy.logerr(instances[0].pred_classes)
+
+            if len(instances[0]) > len(new_prop):
+                instances[0] = instances[0][:len(new_prop)]
 
             insts_inds_after_nms = nms(
                 instances[0].pred_boxes.tensor, instances[0].scores, 0.8)
@@ -101,5 +108,14 @@ class seg:
 
             # rospy.logerr(proposals[0].proposal_boxes[ids][inds_after_nms])
             # rospy.logerr(instances[0][insts_inds_after_nms].pred_boxes)
+            # rospy.logerr(proposals[0].proposal_boxes[ids]
+            #              [inds_after_nms].tensor.shape)
+            # rospy.logerr(mask_features.shape)
+            # rospy.logerr(instances[0].pred_boxes.tensor.shape)
+
+            # rospy.logerr(instances[0][inds_after_nms].pred_boxes.tensor)
+
+            mask_features = self.predictor.model.roi_heads.mask_pooler(
+                mask_features, [instances[0][insts_inds_after_nms].pred_boxes])
 
             return proposals[0].proposal_boxes[ids][inds_after_nms], mask_features, instances[0][insts_inds_after_nms]

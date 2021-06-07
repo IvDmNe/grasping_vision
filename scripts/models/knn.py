@@ -46,6 +46,7 @@ class knn_torch:
         if self.x_data is None:
             print('No trained classes found')
             return None
+        # print(self.x_data.shape, x.shape)
 
         if len(x.shape) == 1:
 
