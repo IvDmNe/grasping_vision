@@ -1,4 +1,3 @@
-import cv_bridge
 import rospy
 from std_msgs.msg import String
 from pytimedinput import timedInput
@@ -14,7 +13,7 @@ def talker():
         print('enter working mode for segmentation algorithm:')
         if 'train' in mode:
             userText, timedOut = timedInput(
-                '', timeOut=15)
+                '', timeOut=5)
             if(timedOut):
                 print('changing mode to inference')
                 mode = 'inference'

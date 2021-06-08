@@ -6,3 +6,5 @@ build/
 .vscode/settings.json
 
 scripts/knn_data_1.pth
+
+scripts/knn_data_2.pth

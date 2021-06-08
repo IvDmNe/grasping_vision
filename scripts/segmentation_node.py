@@ -1,39 +1,30 @@
 #!/home/ivan/anaconda3/bin/python
 
+# this project packages
 from models.segmentation_net import *
 from models.knn import *
 
-import rosnode
-import message_filters
-import cv2 as cv
-import time
-import os
-import sys
-import os.path as osp
-import numpy as np
+# ROS
 import rospy
-import threading
-
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
-
+import message_filters
 from cv_bridge import CvBridge
-# from matplotlib import pyplot as plt
 
-# import torch
+# PyTorch
+import torch
 from torch.nn import functional as F
 
-from detectron2.utils.visualizer import Visualizer
-from detectron2.data import MetadataCatalog, DatasetCatalog
-
-# import detectron2
+# Detectron 2
 from detectron2.utils.logger import setup_logger
-from detectron2.utils.colormap import random_color
-
-from scipy.spatial.distance import euclidean
 from detectron2.utils.colormap import colormap
-import matplotlib.pyplot as plt
-import torch
+
+# misc
+import threading
+import cv2 as cv
+import time
+import numpy as np
+from scipy.spatial.distance import euclidean
 
 setup_logger()
 
@@ -265,9 +256,6 @@ class ImageListener:
 
                 mask = get_one_mask(
                     boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
-                # apply masking
-                # image_masked = cv.bitwise_and(image, image, mask=mask)
-                # depth_masked = cv.bitwise_and(depth, depth, mask=mask)
 
         elif self.working_mode.split(' ')[0] == 'give':
             demand_class = self.working_mode.split(' ')[1]
@@ -319,13 +307,12 @@ class ImageListener:
             return True
 
     def feed_features_to_classifier(self):
-        # feed saved features to classifier when working mode is change to "inference"
+        # feed saved features to classifier when working mode is changed to "inference"
 
         rospy.logwarn('saving features')
 
         # inl_inds = removeOutliers(self.x_data_to_save.cpu(), 1.5)
         # self.x_data_to_save = self.x_data_to_save[inl_inds]
-        # print(self.x_data_to_save.shape)
 
         self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
             1]] * self.x_data_to_save.shape[0])
@@ -363,13 +350,24 @@ def get_one_mask(boxes, mask, image, n_mask=None):
 
 
 def removeOutliers(x, outlierConstant):
-    a = np.array(x)
-    upper_quartile = np.percentile(a, 75)
-    lower_quartile = np.percentile(a, 25)
-    IQR = (upper_quartile - lower_quartile) * outlierConstant
-    quartileSet = (lower_quartile - IQR, upper_quartile + IQR)
+    # a = np.array(x)
+    # print(a.shape)
+    cur_x = x.clone()
+    # inliers = np.array()
+    for col in range(x.shape[1]):
+        a = cur_x[:, col]
 
-    return np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))
+        upper_quartile = np.percentile(a, 75)
+        lower_quartile = np.percentile(a, 25)
+        IQR = (upper_quartile - lower_quartile) * outlierConstant
+        quartileSet = (lower_quartile - IQR, upper_quartile + IQR)
+
+        cur_x = cur_x[np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))]
+        print(cur_x.shape)
+
+    # print(cur_x)
+    return cur_x
+    # return np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))
 
 
 if __name__ == '__main__':
