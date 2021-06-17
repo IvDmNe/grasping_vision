@@ -10,7 +10,9 @@ It has several steps:
 ROS melodic
 
 For python:
-pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html tqdm pytimedinput rospy detectron2 pandas scipy
+conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-lts -c nvidia
+
+pip3 install tqdm pytimedinput rospy detectron2 pandas scipy
 For Python scripts run: conda env create -f scripts/segm.yaml
 
 Additionally, install opencv_bridge for ROS (i.e. from https://cyaninfinite.com/ros-cv-bridge-with-python-3/)
