@@ -11,11 +11,11 @@ ROS melodic
 
 For python:
 Install conda and activate env (for example: conda create -n cv python=3.8.5
-
+...
 conda install pytorch==1.8.0 torchvision==0.9.0 cudatoolkit=11.1 -c pytorch -c conda-forge
 
 pip3 install tqdm pytimedinput rospy detectron2 pandas scipy
-
+...
 For Python scripts run: conda env create -f scripts/segm.yaml
 
 Additionally, install opencv_bridge for ROS (i.e. from https://cyaninfinite.com/ros-cv-bridge-with-python-3/)
