@@ -10,7 +10,7 @@ It has several steps:
 ROS melodic
 
 For python:
-Install conda and activate env (for example: conda create -n cv python=3.8.5
+Install conda and activate env (for example:``` conda create -n cv python=3.8.5```
 ```
 conda install pytorch==1.8.0 torchvision==0.9.0 cudatoolkit=11.1 -c pytorch -c conda-forge
 
