@@ -21,8 +21,8 @@ pip3 install pytimedinput
 Additionally, install opencv_bridge for ROS (i.e. from https://cyaninfinite.com/ros-cv-bridge-with-python-3/)
 
 For C++:
--PCL
--Eigen
+* PCL 
+* Eigen
 
 
 ## Run 
@@ -34,9 +34,9 @@ For C++:
 ## Usage
 
 In the command_node user can enter one of the following commands:
-  -inference (default)
-  -train {name of object}
-  -give {name of object}
+  * inference (default)
+  * train {name of object}
+  * give {name of object}
   
 1. In inference mode the segmentation node segments image and classify each object. One random bounding box is outputed
 2. In train mode the node stores all images of an object for 30 seconds and then feed deep features of them into KNN-classifier
