@@ -16,7 +16,7 @@ conda install pytorch==1.8.0 torchvision==0.9.0 cudatoolkit=11.1 -c pytorch -c c
 
 pip3 install tqdm pytimedinput rospy detectron2 pandas scipy
 ```
-For Python scripts run: conda env create -f scripts/segm.yaml
+For Python scripts run: ```conda env create -f scripts/segm.yaml```
 
 Additionally, install opencv_bridge for ROS (i.e. from https://cyaninfinite.com/ros-cv-bridge-with-python-3/)
 
@@ -26,5 +26,7 @@ For C++:
 
 
 ## Run 
+```
 1. roslaunch launch/launch_them_all.launch
 2. rosrun scripts/command_node.py (in another terminal)
+```
