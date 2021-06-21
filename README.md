@@ -30,3 +30,14 @@ For C++:
 1. roslaunch launch/launch_them_all.launch
 2. rosrun scripts/command_node.py (in another terminal)
 ```
+
+## Usage
+
+In the command_node user can enter one of the following commands:
+  -inference (default)
+  -train {name of object}
+  -give {name of object}
+  
+1. In inference mode the segmentation node segments image and classify each object. One random bounding box is outputed
+2. In train mode the node stores all images of an object for 30 seconds and then feed deep features of them into KNN-classifier
+3. In give mode the image is segmented and the coordinates of bouding box of a desired object are sent to the topic ```/obb_array```
