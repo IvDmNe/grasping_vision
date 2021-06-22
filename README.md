@@ -13,7 +13,7 @@ For python:
 Install conda and activate env (for example:``` conda create -n cv python=3.8.5```
 ```
 conda install pytorch==1.8.0 torchvision==0.9.0 cudatoolkit=11.1 -c pytorch -c conda-forge
-conda install -c conda-forge opencv tqdm pandas scipy ros-rospy
+pip install opencv-python tqdm pandas scipy rospy
 
 python -m pip install detectron2 -f \
   https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
