@@ -1,13 +1,14 @@
 import torch
 import os
 import pandas as pd
+import time
 
 
 class knn_torch:
-    def __init__(self, datafile=None, save_file='knn_data.pth'):
+    def __init__(self, datafile=None, savefile=None):
         self.x_data = None
         self.y_data = None
-        self.save_file = save_file
+        self.save_file = datafile if not savefile else savefile
         self.classes = None
 
         if datafile:
@@ -58,7 +59,6 @@ class knn_torch:
 
             # cl = self.y_data[nearest_idx]
             cl = [self.y_data[i] for i in knn.indices]
-            # print(cl)
             return cl
         elif len(x.shape) == 2:
             clss = []

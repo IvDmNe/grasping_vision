@@ -26,10 +26,10 @@ import time
 import numpy as np
 from scipy.spatial.distance import euclidean
 
-# setup_logger()
+setup_logger()
 
 
-lock = threading.Lock()
+# lock = threading.Lock()
 freq = 100
 
 
@@ -47,72 +47,45 @@ class ImageListener:
         self.x_data_to_save = None
         self.prev_mode = 'inference'
 
-        self.cv_bridge = CvBridge()
+        self.cam = cv.VideoCapture(0)
 
-        # initialize a node
-        rospy.init_node("sod", log_level=rospy.INFO)
-        self.rgb_pub = rospy.Publisher('/rgb_masked', Image, queue_size=10)
-        self.depth_pub = rospy.Publisher('/depth_masked', Image, queue_size=10)
-        self.segmented_view_pub = rospy.Publisher(
-            '/segmented_view', Image, queue_size=10)
+        # self.cv_bridge = CvBridge()
+
+        # # initialize a node
+        # rospy.init_node("sod", log_level=rospy.INFO)
+        # self.rgb_pub = rospy.Publisher('/rgb_masked', Image, queue_size=10)
+        # self.depth_pub = rospy.Publisher('/depth_masked', Image, queue_size=10)
+        # self.segmented_view_pub = rospy.Publisher(
+        #     '/segmented_view', Image, queue_size=10)
 
         self.base_frame = 'measured/base_link'
         self.camera_frame = 'measured/camera_color_optical_frame'
         self.target_frame = self.base_frame
 
-        rgb_sub = message_filters.Subscriber('/camera/color/image_raw',
-                                             Image, queue_size=10)
+        # rgb_sub = message_filters.Subscriber('/camera/color/image_raw',
+        #                                      Image, queue_size=10)
 
-        depth_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw',
-                                               Image, queue_size=10)
+        # depth_sub = message_filters.Subscriber('/camera/aligned_depth_to_color/image_raw',
+        #                                        Image, queue_size=10)
 
-        rospy.Subscriber('/command_from_human',
-                         String, self.callback_mode)
+        # rospy.Subscriber('/command_from_human',
+        #                  String, self.callback_mode)
 
         self.seg_net = seg()
         self.classifier = knn_torch(
             datafile='/home/ivan/ros_ws/src/pc_proc/scripts/knn_data.pth')
 
-        ts = message_filters.ApproximateTimeSynchronizer(
-            [rgb_sub, depth_sub], 1, 0.1)
-        ts.registerCallback(self.callback_rgbd)
+        # ts = message_filters.ApproximateTimeSynchronizer(
+        #     [rgb_sub, depth_sub], 1, 0.1)
+        # ts.registerCallback(self.callback_rgbd)
 
         self.colors = colormap()
 
-        # print('a')
-        rospy.loginfo('Segmentaion node: Init complete')
-
-    def callback_rgbd(self, rgb, depth):
-        self.depth_encoding = depth.encoding
-        if depth.encoding == '32FC1':
-            depth_cv = self.cv_bridge.imgmsg_to_cv2(depth)
-        elif depth.encoding == '16UC1':
-            depth_cv = self.cv_bridge.imgmsg_to_cv2(
-                depth).copy().astype(np.float32)
-            depth_cv /= 1000.0
-            # print('16UC1')
-        else:
-            rospy.logerr_throttle(
-                1, 'Unsupported depth type. Expected 16UC1 or 32FC1, got {}'.format(
-                    depth.encoding))
-            return
-
-        im = self.cv_bridge.imgmsg_to_cv2(rgb, 'bgr8')
-
-        with lock:
-            self.im = im.copy()
-            self.depth = depth_cv.copy()
-            self.rgb_frame_id = rgb.header.frame_id
-            self.rgb_frame_stamp = rgb.header.stamp
-
-    def callback_mode(self, mode):
-        self.prev_mode = self.working_mode
-        self.working_mode = mode.data
-        rospy.logwarn(f"changing working mode to {self.working_mode}")
+        # rospy.loginfo('Segmentaion node: Init complete')
 
     def do_segmentation(self, image):
 
-        seg_mask_features, instances = self.seg_net.forward(
+        proposal_boxes, seg_mask_features, instances = self.seg_net.forward(
             image)
 
         # for box in proposal_boxes:
@@ -133,7 +106,7 @@ class ImageListener:
         #     masked_image[cur_mask > 0.5] = (0, 255, 255)
 
         if len(seg_mask_features) == 0 or len(instances.pred_boxes.tensor) == 0:
-            rospy.logerr_throttle(2, 'no objects found')
+            print('no objects found')
             return
 
         # decrease dimension of features by global pooling
@@ -147,25 +120,25 @@ class ImageListener:
         # return features, proposal_boxes.tensor, instances.pred_masks
         return features, instances.pred_boxes.tensor, instances.pred_masks
 
-    def send_images_to_topics(self, image_masked=None, depth_masked=None, image_segmented=None):
-        if image_masked is not None:
-            rgb_msg = self.cv_bridge.cv2_to_imgmsg(image_masked)
-            rgb_msg.header.stamp = rospy.Time.now()
-            # rgb_msg.header.frame_id = rgb_frame_id
-            rgb_msg.encoding = 'bgr8'
-            self.rgb_pub.publish(rgb_msg)
-        if depth_masked is not None:
-            depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_masked)
-            depth_msg.header.stamp = rospy.Time.now()
-            # depth_msg.header.frame_id = rgb_frame_id
-            depth_msg.encoding = '32FC1'
-            self.depth_pub.publish(depth_msg)
-        if image_segmented is not None:
-            mask_msg = self.cv_bridge.cv2_to_imgmsg(image_segmented)
-            mask_msg.header.stamp = rospy.Time.now()
-            # mask_msg.header.frame_id = rgb_frame_id
-            mask_msg.encoding = 'bgr8'
-            self.segmented_view_pub.publish(mask_msg)
+    # def send_images_to_topics(self, image_masked=None, depth_masked=None, image_segmented=None):
+    #     if image_masked is not None:
+    #         rgb_msg = self.cv_bridge.cv2_to_imgmsg(image_masked)
+    #         rgb_msg.header.stamp = rospy.Time.now()
+    #         # rgb_msg.header.frame_id = rgb_frame_id
+    #         rgb_msg.encoding = 'bgr8'
+    #         self.rgb_pub.publish(rgb_msg)
+    #     if depth_masked is not None:
+    #         depth_msg = self.cv_bridge.cv2_to_imgmsg(depth_masked)
+    #         depth_msg.header.stamp = rospy.Time.now()
+    #         # depth_msg.header.frame_id = rgb_frame_id
+    #         depth_msg.encoding = '32FC1'
+    #         self.depth_pub.publish(depth_msg)
+    #     if image_segmented is not None:
+    #         mask_msg = self.cv_bridge.cv2_to_imgmsg(image_segmented)
+    #         mask_msg.header.stamp = rospy.Time.now()
+    #         # mask_msg.header.frame_id = rgb_frame_id
+    #         mask_msg.encoding = 'bgr8'
+    #         self.segmented_view_pub.publish(mask_msg)
 
     def save_data(self, features, cl, im_shape, boxes):
 
@@ -188,16 +161,18 @@ class ImageListener:
         image_masked = None
         depth_masked = None
 
-        with lock:
-            if self.im is None:
-                rospy.logerr_throttle(5, "No image received")
-                return
-            image = self.im.copy()
-            depth = self.depth.copy()
+        # with lock:
+        # if self.im is None:
+        #     rospy.logerr_throttle(5, "No image received")
+        #     return
+        # image = self.im.copy()
+        # depth = self.depth.copy()
+        _, image = self.cam.read()
+        # print(image.shape)
 
         # segment rgb image
         image = cv.resize(image, (640, 480))
-        depth = cv.resize(depth, (640, 480))
+        # depth = cv.resize(depth, (640, 480))
 
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
@@ -207,7 +182,7 @@ class ImageListener:
             return
 
         # filter depth by 1 meter
-        depth[depth > 1.0] = 1.0
+        # depth[depth > 1.0] = 1.0
 
         # choose action according to working mode
         if self.working_mode.split(' ')[0] == 'train':
@@ -231,20 +206,18 @@ class ImageListener:
                     c = self.colors[idx].astype(np.uint8).tolist()
 
                     # draw bounding box
-                    pts = box.detach().cpu().int()
-                    # print(pts)
-                    cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                                 (int(pts[2]), int(pts[3])), c, 2)
+                    pts = box.detach().cpu().long()
+                    cv.rectangle(image_segmented, (pts[0], pts[1]),
+                                 (pts[2], pts[3]), c, 2)
 
                     # draw label
                     pt = (box[:2].round().long()) - 2
-                    pt = (int(pt[0]), int(pt[1]))
-                    cv.putText(image_segmented, cl, pt,
+                    cv.putText(image_segmented, cl, tuple(pt),
                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
                     # draw object masks
                     x1, y1, x2, y2 = box.round().long()
-                    sz = (int(x2 - x1), int(y2 - y1))
+                    sz = (x2 - x1, y2 - y1)
 
                     mask_rs = cv.resize(
                         m.squeeze().detach().cpu().numpy(), sz)
@@ -260,9 +233,12 @@ class ImageListener:
                 mask = get_one_mask(
                     boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
 
+                cv.imshow('im', image_segmented)
+                cv.waitKey(1)
+
         elif self.working_mode.split(' ')[0] == 'give':
             demand_class = self.working_mode.split(' ')[1]
-            rospy.logwarn(f'Command: {self.working_mode}')
+            # rospy.logwarn(f'Command: {self.working_mode}')
             self.working_mode = 'inference'
             classes = self.classifier.classify(features.squeeze())
 
@@ -271,8 +247,8 @@ class ImageListener:
 
             if classes:
                 if not (demand_class in classes):
-                    rospy.logwarn(
-                        f'object: {demand_class} not found among {classes}')
+                    # rospy.logwarn(
+                    #     f'object: {demand_class} not found among {classes}')
                     return
 
                 idx = classes.index(demand_class)
@@ -280,18 +256,18 @@ class ImageListener:
                     boxes.cpu().int().numpy(), pred_masks, image, idx).astype(np.uint8)
                 # apply masking
                 image_masked = cv.bitwise_and(image, image, mask=mask)
-                depth_masked = cv.bitwise_and(depth, depth, mask=mask)
+                # depth_masked = cv.bitwise_and(depth, depth, mask=mask)
 
-        else:
-            rospy.logerr_throttle(
-                1, f'invalid working mode: {self.working_mode}')
-            return
+        # else:
+        #     # rospy.logerr_throttle(
+        #     #     1, f'invalid working mode: {self.working_mode}')
+            # return
 
-        self.send_images_to_topics(image_masked, depth_masked, image_segmented)
+        # self.send_images_to_topics(image_masked, depth_masked, image_segmented)
 
         end = time.time()
         fps = 1 / (end - start)
-        rospy.logwarn(f'FPS: {fps:.2f}')
+        print(f'FPS: {fps:.2f}')
 
     def check_sim(self, box):
         box_center = ((box[3] + box[1]) // 2, (box[2] + box[0]) // 2)
@@ -301,8 +277,8 @@ class ImageListener:
             return True
         # print(euclidean(box_center, self.prev_training_mask_info))
         if euclidean(box_center, self.prev_training_mask_info) > 80:
-            rospy.logwarn(
-                f"skipping image, too far from previous: {euclidean(box_center, self.prev_training_mask_info):.2f} (threshold: {80})")
+            # rospy.logwarn(
+            #     f"skipping image, too far from previous: {euclidean(box_center, self.prev_training_mask_info):.2f} (threshold: {80})")
             # print(euclidean(box_center, self.prev_training_mask_info))
             return False
         else:
@@ -312,7 +288,7 @@ class ImageListener:
     def feed_features_to_classifier(self):
         # feed saved features to classifier when working mode is changed to "inference"
 
-        rospy.logwarn('saving features')
+        # rospy.logwarn('saving features')
 
         # inl_inds = removeOutliers(self.x_data_to_save.cpu(), 1.5)
         # self.x_data_to_save = self.x_data_to_save[inl_inds]
@@ -376,10 +352,10 @@ def removeOutliers(x, outlierConstant):
 if __name__ == '__main__':
 
     listener = ImageListener()
-    rate = rospy.Rate(freq)
+    # rate = rospy.Rate(freq)
     try:
-        while not rospy.is_shutdown():
+        while True:
             listener.run_proc()
-            rate.sleep()
+            # rate.sleep()
     finally:
         cv.destroyAllWindows()

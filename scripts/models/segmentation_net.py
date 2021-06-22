@@ -16,9 +16,7 @@ import rospy
 class seg:
     def __init__(self):
         self.cfg = get_cfg()
-        # self.cfg.defrost()
-        # self.cfg['MODEL']['ROI_HEADS']['SCORE_THRESH_TEST'] = 0.2
-        # self.cfg['MODEL']['ROI_MASK_HEAD']['SCORE_THRESH_TEST'] = 0.2
+
         # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
         self.cfg.merge_from_file(model_zoo.get_config_file(
             "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
@@ -52,8 +50,6 @@ class seg:
             t_image = ImageList.from_tensors(
                 [torch.Tensor(image).permute(2, 0, 1)])
 
-            # print(image.shape)
-
             features = self.predictor.model.backbone(
                 t_image.tensor.cuda())
 
@@ -66,7 +62,7 @@ class seg:
             min_idx = -1
             ids = []
             for idx, (box, score) in enumerate(zip(proposals[0].proposal_boxes[:10], torch.sigmoid(proposals[0].objectness_logits[:10]))):
-                if score < 0.96:
+                if score < 0.95:
                     break
                 pts = box.detach().cpu().long()
 
@@ -99,23 +95,7 @@ class seg:
             insts_inds_after_nms = nms(
                 instances[0].pred_boxes.tensor, instances[0].scores, 0.8)
 
-            # rospy.logerr(insts_inds_after_nms)
-            # rospy.logerr(instances[0].pred_boxes.tensor[insts_inds_after_nms])
-
-            # rospy.logerr(new_prop)
-            # rospy.logerr(instances[0].pred_boxes)
-            # rospy.logerr(instances.pred_boxes)
-
-            # rospy.logerr(proposals[0].proposal_boxes[ids][inds_after_nms])
-            # rospy.logerr(instances[0][insts_inds_after_nms].pred_boxes)
-            # rospy.logerr(proposals[0].proposal_boxes[ids]
-            #              [inds_after_nms].tensor.shape)
-            # rospy.logerr(mask_features.shape)
-            # rospy.logerr(instances[0].pred_boxes.tensor.shape)
-
-            # rospy.logerr(instances[0][inds_after_nms].pred_boxes.tensor)
-
             mask_features = self.predictor.model.roi_heads.mask_pooler(
                 mask_features, [instances[0][insts_inds_after_nms].pred_boxes])
 
-            return proposals[0].proposal_boxes[ids][inds_after_nms], mask_features, instances[0][insts_inds_after_nms]
+            return mask_features, instances[0][insts_inds_after_nms]

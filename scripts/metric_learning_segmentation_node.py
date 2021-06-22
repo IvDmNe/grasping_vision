@@ -2,7 +2,10 @@
 
 # this project packages
 from models.segmentation_net import *
+from models.feature_extractor import image_embedder
+from models.mlp import MLP
 from models.knn import *
+from utils.utils import *
 
 # ROS
 import rospy
@@ -24,9 +27,10 @@ import threading
 import cv2 as cv
 import time
 import numpy as np
-from scipy.spatial.distance import euclidean
 
-# setup_logger()
+torch.set_grad_enabled
+
+setup_logger()
 
 
 lock = threading.Lock()
@@ -70,8 +74,10 @@ class ImageListener:
                          String, self.callback_mode)
 
         self.seg_net = seg()
+
+        self.embedder = image_embedder('mobilenetv3_small_128_models.pth')
         self.classifier = knn_torch(
-            datafile='/home/ivan/ros_ws/src/pc_proc/scripts/knn_data.pth')
+            datafile='/home/ivan/ros_ws/src/pc_proc/scripts/knn_data_metric_learning.pth')
 
         ts = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], 1, 0.1)
@@ -79,7 +85,6 @@ class ImageListener:
 
         self.colors = colormap()
 
-        # print('a')
         rospy.loginfo('Segmentaion node: Init complete')
 
     def callback_rgbd(self, rgb, depth):
@@ -115,37 +120,34 @@ class ImageListener:
         seg_mask_features, instances = self.seg_net.forward(
             image)
 
-        # for box in proposal_boxes:
-
-        # pts = box.detach().cpu().long()
-        # cv.rectangle(masked_image, (pts[0], pts[1]),
-        #              (pts[2], pts[3]), (255, 0, 0), 2)
-
-        # draw object masks
-        # for box, mask in zip(instances.pred_boxes, instances.pred_masks):
-        #     x1, y1, x2, y2 = box.round().long()
-        #     sz = (x2 - x1, y2 - y1)
-
-        #     mask_rs = cv.resize(mask.squeeze().detach().cpu().numpy(), sz)
-
-        #     cur_mask = np.zeros((image.shape[:-1]))
-        #     cur_mask[y1:y2, x1:x2] = mask_rs
-        #     masked_image[cur_mask > 0.5] = (0, 255, 255)
-
         if len(seg_mask_features) == 0 or len(instances.pred_boxes.tensor) == 0:
             rospy.logerr_throttle(2, 'no objects found')
             return
 
-        # decrease dimension of features by global pooling
-        features = F.avg_pool2d(
-            seg_mask_features, kernel_size=seg_mask_features.size()[2:])
+        final_masks = []
 
-        # mask = get_one_mask(
-        #     instances.pred_boxes.tensor.round().long().detach().cpu().numpy(), instances.pred_masks, image).astype(np.uint8)
+        for box, mask in zip(instances.pred_boxes, instances.pred_masks):
+            # get masked images
+            x1, y1, x2, y2 = box.round().long()
+            sz = (int(x2 - x1), int(y2 - y1))
 
-        # return features, proposal_boxes.tensor, masked_image, mask, instances.pred_masks
-        # return features, proposal_boxes.tensor, instances.pred_masks
-        return features, instances.pred_boxes.tensor, instances.pred_masks
+            mask_rs = cv.resize(
+                mask.squeeze().detach().cpu().numpy(), sz)
+
+            cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+            cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+
+            image_masked = cv.bitwise_and(image, image, mask=cur_mask)
+
+            final_mask = image_masked[y1:y2, x1:x2]
+
+            final_mask_sq = get_padded_image(final_mask)
+            final_masks.append(final_mask_sq)
+
+            # cv.imshow('m', final_mask_sq)
+            # cv.waitKey()
+
+        return final_masks, instances.pred_boxes.tensor, instances.pred_masks
 
     def send_images_to_topics(self, image_masked=None, depth_masked=None, image_segmented=None):
         if image_masked is not None:
@@ -202,12 +204,39 @@ class ImageListener:
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
         if ret_seg:
-            features, boxes, pred_masks = ret_seg
+            images_masked, boxes, pred_masks = ret_seg
         else:
             return
 
         # filter depth by 1 meter
         depth[depth > 1.0] = 1.0
+
+        with torch.no_grad():
+            features = self.embedder(images_masked)
+
+        # draw contours of found objects
+        for box, m in zip(boxes, pred_masks):
+            c = self.colors[0].astype(np.uint8).tolist()
+
+            # draw bounding box
+            pts = box.detach().cpu().long()
+            cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                         (int(pts[2]), int(pts[3])), c, 2)
+
+            # draw object masks
+            x1, y1, x2, y2 = box.round().long()
+            sz = (int(x2 - x1), int(y2 - y1))
+
+            mask_rs = cv.resize(
+                m.squeeze().detach().cpu().numpy(), sz)
+
+            cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+            cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+            cntrs, _ = cv.findContours(
+                cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+            cv.drawContours(image_segmented, cntrs, -
+                            1, c, 2)
 
         # choose action according to working mode
         if self.working_mode.split(' ')[0] == 'train':
@@ -231,8 +260,7 @@ class ImageListener:
                     c = self.colors[idx].astype(np.uint8).tolist()
 
                     # draw bounding box
-                    pts = box.detach().cpu().int()
-                    # print(pts)
+                    pts = box.detach().cpu().long()
                     cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
                                  (int(pts[2]), int(pts[3])), c, 2)
 
@@ -322,55 +350,6 @@ class ImageListener:
 
         self.x_data_to_save = None
         self.prev_mode = 'inference'
-
-
-def get_nearest_to_center_box(im_shape, boxes):
-    center = np.array(im_shape[:-1]) // 2
-    min_dist = 1000000  # just a big number
-    min_idx = -1
-    for idx, box in enumerate(boxes):
-        box_center = ((box[3] + box[1]) // 2, (box[2] + box[0]) // 2)
-        dist = euclidean(box_center, center)
-        if dist < min_dist:
-            min_dist = dist
-            min_idx = idx
-
-    return min_idx
-
-
-def get_one_mask(boxes, mask, image, n_mask=None):
-    if n_mask is None:
-        cent_ix = get_nearest_to_center_box(image.shape, boxes)
-    else:
-        cent_ix = n_mask
-    x1, y1, x2, y2 = boxes[cent_ix]
-    sz = (x2 - x1, y2 - y1)
-    mask_rs = cv.resize(mask[cent_ix].squeeze().detach().cpu().numpy(), sz)
-
-    cur_mask = np.zeros((image.shape[: -1]))
-    cur_mask[y1: y2, x1: x2] = mask_rs
-    return cv.threshold(cur_mask, 0.5, 1.0, cv.THRESH_BINARY)[1]
-
-
-def removeOutliers(x, outlierConstant):
-    # a = np.array(x)
-    # print(a.shape)
-    cur_x = x.clone()
-    # inliers = np.array()
-    for col in range(x.shape[1]):
-        a = cur_x[:, col]
-
-        upper_quartile = np.percentile(a, 75)
-        lower_quartile = np.percentile(a, 25)
-        IQR = (upper_quartile - lower_quartile) * outlierConstant
-        quartileSet = (lower_quartile - IQR, upper_quartile + IQR)
-
-        cur_x = cur_x[np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))]
-        print(cur_x.shape)
-
-    # print(cur_x)
-    return cur_x
-    # return np.where((a >= quartileSet[0]) & (a <= quartileSet[1]))
 
 
 if __name__ == '__main__':

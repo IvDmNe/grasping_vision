@@ -13,7 +13,7 @@ def talker():
         print('enter working mode for segmentation algorithm:')
         if 'train' in mode:
             userText, timedOut = timedInput(
-                '', timeOut=5)
+                '', timeOut=15)
             if(timedOut):
                 print('changing mode to inference')
                 mode = 'inference'

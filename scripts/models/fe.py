@@ -2,51 +2,27 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 from torchvision import transforms
-from models.mlp import MLP
+from mlp import MLP
 import torchvision
-# from pytorch_metric_learning.utils import common_functions
-
-
-class feature_extractor(nn.Module):
-
-    def __init__(self, backbone):
-        super(feature_extractor, self).__init__()
-        self.backbone = nn.Sequential(*list(backbone.children())[:-1])
-
-    def forward(self, x):
-        feats = self.backbone(x)
-        output = F.max_pool2d(feats, kernel_size=feats.size()[2:])
-        output = output.squeeze()
-        return output
-
-
-class Identity(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        return x
+from pytorch_metric_learning.utils import common_functions
 
 
 class image_embedder(nn.Module):
-    def __init__(self, file):
+    def __init__(self):
         super().__init__()
 
         self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         # filedata = torch.load(file)
-        # self.backbone = filedata[0].to(self.device)
-        # self.embedder = filedata[1].to(self.device)
-
         self.trunk = torchvision.models.mobilenet_v3_small()
-        self.trunk.classifier = Identity()
+        self.trunk.classifier = common_functions.Identity()
         self.embedder = MLP([576, 128])
 
         self.trunk.load_state_dict(
-            torch.load('/home/ivan/grasping/metric_learning/example_saved_models/mobilenetv3_small_128/trunk_1.pth'))
+            torch.load('/home/ivan/grasping/metric_learning/example_saved_models/mobilenetv3_small_128/trunk_5.pth'))
 
         self.embedder.load_state_dict(torch.load(
-            '/home/ivan/grasping/metric_learning/example_saved_models/mobilenetv3_small_128/embedder_1.pth'))
+            '/home/ivan/grasping/metric_learning/example_saved_models/mobilenetv3_small_128/embedder_5.pth'))
 
         self.trunk.to(self.device)
         self.embedder.to(self.device)
@@ -56,8 +32,6 @@ class image_embedder(nn.Module):
             transforms.Resize(224),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-
-        self.eval()
 
     def forward(self, x):
 
@@ -70,7 +44,27 @@ class image_embedder(nn.Module):
 
         if self.embedder:
             res = self.embedder(res)
-        return res
+            return res
 
     # def load_from_file(self, filename):
     #     self.backbone, self.embedder = torch.load(filename)
+
+
+if __name__ == '__main__':
+
+    trunk = torchvision.models.mobilenet_v3_small()
+    trunk.classifier = common_functions.Identity()
+
+    # m = image_embedder()
+    ar = torch.ones([5, 3, 224, 224])
+
+    # print(m(ar))
+    tr_res = trunk(ar)
+    print(tr_res.shape)
+
+    mlp = MLP([576, 128])
+
+    ar = torch.ones([3, 576])
+    # print(ar.shape)
+
+    print(mlp(tr_res).shape)

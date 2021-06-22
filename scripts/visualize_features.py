@@ -18,7 +18,7 @@ def removeOutliers(x, outlierConstant):
 
 
 if __name__ == '__main__':
-    data = torch.load('knn_data.pth')
+    data = torch.load('knn_data_metric_learning.pth')
     time_start = time.time()
     tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
     print(data['x'].shape, len(data['y']))
