@@ -20,7 +20,7 @@ python -m pip install detectron2 -f \
 pip3 install pytimedinput
 ```
 
-```pip install sklearn``` for visualization
+```pip install sklearn seaborn``` for visualization
 
 Additionally, install opencv_bridge for ROS (i.e. from https://cyaninfinite.com/ros-cv-bridge-with-python-3/)
 
