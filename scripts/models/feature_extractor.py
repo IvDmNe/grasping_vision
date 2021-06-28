@@ -43,10 +43,10 @@ class image_embedder(nn.Module):
         self.embedder = MLP([576, 128])
 
         self.trunk.load_state_dict(
-            torch.load('/home/ivan/grasping/metric_learning/example_saved_models/mobilenetv3_small_128/trunk_1.pth'))
+            torch.load('trunk_1.pth'))
 
         self.embedder.load_state_dict(torch.load(
-            '/home/ivan/grasping/metric_learning/example_saved_models/mobilenetv3_small_128/embedder_1.pth'))
+            'embedder_1.pth'))
 
         self.trunk.to(self.device)
         self.embedder.to(self.device)

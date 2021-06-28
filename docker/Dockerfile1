@@ -1,0 +1,71 @@
+# FROM continuumio/miniconda3
+
+# WORKDIR /home/ivan/ros_ws/src/pc_proc
+
+
+# RUN apt-get update -q
+
+# RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list' && \
+# curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+
+# RUN apt-get install ros-melodic-desktop-full -y
+
+#RUN conda create -f scripts/cv_env.yml
+
+# FROM pytorch/pytorch:1.8.0-cuda11.1-cudnn8-runtime
+
+# WORKDIR /media/ivan/da203a9b-99bb-4f6d-aad9-f0ef596a3ade
+
+# RUN apt-get update -q
+
+# FROM ros:melodic-robot
+
+FROM nvidia/cuda:11.1.1-cudnn8-runtime-ubuntu18.04
+
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+    curl  \
+    apt-utils \
+    git \
+    python3-pip
+
+
+
+# instapp pip packages
+# RUN pip3 install pip3 install torch torchvisio \
+#     # torch==1.8.1+cu111 torchvision==0.9.1+cu111 -f https://download.pytorch.org/whl/lts/1.8/torch_lts.html \
+#     opencv-python tqdm pandas scipy rospy \
+#     detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html \
+#     pytimedinput
+
+
+# clone project
+# RUN git clone https://github.com/IvDmNe/point_cloud_processing.git && \
+#     cd point_cloud_processing/scripts && 
+
+# install miniconda
+RUN apt-get -qq update && apt-get -qq -y install curl bzip2 \
+    && curl -sSL https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -bfp /usr/local \
+    && rm -rf /tmp/miniconda.sh \
+    && conda install -y python=3 \
+    && conda update conda \
+    # && apt-get -qq -y remove curl bzip2 \
+    # && apt-get -qq -y autoremove \
+    # && apt-get autoclean \
+    && rm -rf /var/lib/apt/lists/* /var/log/dpkg.log \
+    && conda clean --all --yes
+
+# ENV PATH /opt/conda/bin:$PATH
+
+# clone project
+RUN git clone https://github.com/IvDmNe/point_cloud_processing.git && \
+    cd point_cloud_processing/scripts && \
+    conda env create -f cv_env.yml
+
+RUN conda init
+RUN echo "conda activate cv" >> ~/.bashrc
+
+# RUN conda activate cv && pip3 install https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
+
+
+
