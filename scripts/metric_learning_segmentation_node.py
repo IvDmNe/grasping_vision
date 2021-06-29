@@ -1,5 +1,6 @@
 #!/home/ivan/anaconda3/bin/python
 
+
 # this project packages
 from models.segmentation_net import *
 from models.feature_extractor import image_embedder
@@ -77,7 +78,8 @@ class ImageListener:
 
         self.embedder = image_embedder('mobilenetv3_small_128_models.pth')
         self.classifier = knn_torch(
-            datafile='/home/ivan/ros_ws/src/pc_proc/scripts/knn_data_metric_learning.pth')
+            # datafile='/home/ivan/ros_ws/src/pc_proc/scripts/knn_data_metric_learning.pth')
+            datafile='knn_data_metric_learning.pth')
 
         ts = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], 1, 0.1)
@@ -249,13 +251,13 @@ class ImageListener:
             if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
                 self.feed_features_to_classifier()
 
-            classes = self.classifier.classify(features.squeeze())
+            classes, confs = self.classifier.classify(features.squeeze())
 
             if isinstance(classes, str):
                 classes = [classes]
             if classes:
                 # draw labels and masks
-                for cl, box, m in zip(classes, boxes, pred_masks):
+                for cl, conf, box, m in zip(classes, confs, boxes, pred_masks):
                     idx = self.classifier.classes.index(cl)
                     c = self.colors[idx].astype(np.uint8).tolist()
 
@@ -267,7 +269,7 @@ class ImageListener:
                     # draw label
                     pt = (box[:2].round().long()) - 2
                     pt = (int(pt[0]), int(pt[1]))
-                    cv.putText(image_segmented, cl, pt,
+                    cv.putText(image_segmented, f'{cl} {conf:.2f}', pt,
                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
                     # draw object masks

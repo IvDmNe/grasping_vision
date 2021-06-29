@@ -2,6 +2,7 @@ import torch
 import os
 import pandas as pd
 import time
+from statistics import mode
 
 
 class knn_torch:
@@ -49,30 +50,44 @@ class knn_torch:
             return None
         # print(self.x_data.shape, x.shape)
 
-        if len(x.shape) == 1:
+        # if len(x.shape) == 1:
 
-            dist = torch.norm(self.x_data - x, dim=1, p=None)
+        #     dist = torch.norm(self.x_data - x, dim=1, p=None)
 
-            knn = dist.topk(5, largest=False)
-            # print(knn, knn.indices)
-            # nearest_idx = knn.indices[0]
+        #     knn = dist.topk(10, largest=False)
+        #     # print(knn, knn.indices)
+        #     # nearest_idx = knn.indices[0]
 
-            # cl = self.y_data[nearest_idx]
-            cl = [self.y_data[i] for i in knn.indices]
-            return cl
-        elif len(x.shape) == 2:
+        #     # cl = self.y_data[nearest_idx]
+        #     cl = [self.y_data[i] for i in knn.indices]
+        #     return cl
+        if len(x.shape) == 2:
             clss = []
+            confs = []
             for x_el in x:
-
+                knn_size = 20
                 dist = torch.norm(self.x_data - x_el, dim=1, p=None)
-                knn = dist.topk(1, largest=False)
-                nearest_idx = knn.indices[0]
+                knn = dist.topk(knn_size, largest=False)
+                # nearest_idx = knn.indices[0]
+
+                near_y = list(map(self.y_data.__getitem__, knn.indices))
+
+                cl = mode(near_y)
+
+                frac = near_y.count(cl) / knn_size
+
+                # print(near_y)
+                # print(mode(near_y))
+                # print(near_y.count(mode(near_y)) / knn_size)
+                # exit()
 
                 # for d, gt in zip(dist, self.y_data):
                 #     print(d.data, gt)
 
                 # print(knn[0].data, nearest_idx)
 
-                cl = self.y_data[nearest_idx]
+                # cl = self.y_data[nearest_idx]
+                # cl = mode(near_y)
                 clss.append(cl)
-            return clss
+                confs.append(frac)
+            return clss, confs

@@ -18,7 +18,9 @@ def removeOutliers(x, outlierConstant):
 
 
 if __name__ == '__main__':
-    data = torch.load('knn_data_metric_learning.pth')
+
+    datafile = 'knn_data_metric_learning.pth'
+    data = torch.load(datafile)
     time_start = time.time()
     tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
     print(data['x'].shape, len(data['y']))
@@ -35,10 +37,6 @@ if __name__ == '__main__':
 
     fig = plt.figure(figsize=(16, 10))
 
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(tsne_results[:, 0], tsne_results[:, 1],
-    #            tsne_results[:, 2], c='skyblue', s=60)
-    # plt.show()
     print(tsne_results.shape, len(data['y']))
     sns.scatterplot(
         x=tsne_results[:, 0], y=tsne_results[:, 1],
@@ -49,3 +47,4 @@ if __name__ == '__main__':
         # alpha=0.3
     )
     plt.show()
+    plt.savefig(f'vis_results_{datafile.split(".")[0]}.png')

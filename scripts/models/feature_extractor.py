@@ -34,19 +34,15 @@ class image_embedder(nn.Module):
 
         self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-        # filedata = torch.load(file)
-        # self.backbone = filedata[0].to(self.device)
-        # self.embedder = filedata[1].to(self.device)
-
         self.trunk = torchvision.models.mobilenet_v3_small()
         self.trunk.classifier = Identity()
         self.embedder = MLP([576, 128])
 
         self.trunk.load_state_dict(
-            torch.load('trunk_1.pth'))
+            torch.load('models/trunk_1.pth'))
 
         self.embedder.load_state_dict(torch.load(
-            'embedder_1.pth'))
+            'models/embedder_1.pth'))
 
         self.trunk.to(self.device)
         self.embedder.to(self.device)
