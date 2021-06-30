@@ -10,7 +10,7 @@ dependencies:
   - bzip2=1.0.8=h7f98852_4
   - ca-certificates=2021.5.30=ha878542_0
   - certifi=2021.5.30=py38h578d9bd_0
-  - cudatoolkit=11.1.1=h6406543_8
+  - cudatoolkit=10.2
   - ffmpeg=4.3=hf484d3e_0
   - freetype=2.10.4=h0708190_1
   - gmp=6.2.1=h58526e2_0
@@ -46,7 +46,7 @@ dependencies:
   - pip=21.1.2=py38h06a4308_0
   - python=3.8.5=h7579374_1
   - python_abi=3.8=1_cp38
-  - pytorch=1.8.0=py3.8_cuda11.1_cudnn8.0.5_0
+  - pytorch=1.9.0
   - readline=8.1=h27cfd23_0
   - setuptools=52.0.0=py38h06a4308_0
   - six=1.16.0=pyh6c4a22f_0
