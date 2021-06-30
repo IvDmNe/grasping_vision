@@ -6,6 +6,18 @@ It has several steps:
 3. Find Oriented bounding box of point cloud (with outlier removal)
 4. Find coefficients of a plane on point cloud of complete scene
 
+## Run in docker
+
+```sh build_docker.sh```
+
+```sh run_docker.sh```
+
+In docker:
+
+```pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html```
+
+
+
 ## Dependencies
 ROS melodic
 
