@@ -14,7 +14,7 @@ It has several steps:
 
 In docker:
 
-```pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html```
+```python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'```
 
 
 
