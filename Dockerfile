@@ -1,5 +1,4 @@
-
-FROM nvidia/cuda:11.1.1-cudnn8-runtime-ubuntu18.04
+FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     apt-utils \
@@ -93,7 +92,7 @@ RUN sudo apt-get install libpcl-dev -y
 
 # RUN detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
   
-RUN pip install detectron2 -f \
-  https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
+# RUN pip install detectron2 -f \
+#   https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
 
 WORKDIR /point_cloud_processing/scripts
