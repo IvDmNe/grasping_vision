@@ -6,6 +6,11 @@ It has several steps:
 3. Find Oriented bounding box of point cloud (with outlier removal)
 4. Find coefficients of a plane on point cloud of complete scene
 
+## Run in docker
+
+```sh build_docker.sh```
+```sh run_docker.sh```
+
 ## Dependencies
 ROS melodic
 
