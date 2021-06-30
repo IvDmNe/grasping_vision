@@ -9,7 +9,14 @@ It has several steps:
 ## Run in docker
 
 ```sh build_docker.sh```
+
 ```sh run_docker.sh```
+
+In docker:
+
+```pip install detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html```
+
+
 
 ## Dependencies
 ROS melodic
