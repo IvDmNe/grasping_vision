@@ -146,9 +146,6 @@ class ImageListener:
             final_mask_sq = get_padded_image(final_mask)
             final_masks.append(final_mask_sq)
 
-            # cv.imshow('m', final_mask_sq)
-            # cv.waitKey()
-
         return final_masks, instances.pred_boxes.tensor, instances.pred_masks
 
     def send_images_to_topics(self, image_masked=None, depth_masked=None, image_segmented=None):
@@ -250,8 +247,8 @@ class ImageListener:
         elif self.working_mode == 'inference':
             if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
                 self.feed_features_to_classifier()
-
-            classes, confs = self.classifier.classify(features.squeeze())
+            
+            classes, confs = self.classifier.classify(features)
 
             if isinstance(classes, str):
                 classes = [classes]

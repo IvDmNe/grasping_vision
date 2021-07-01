@@ -44,6 +44,7 @@ class knn_torch:
                     'y': self.y_data}, self.save_file)
 
     def classify(self, x):
+        print(x.shape)
 
         if self.x_data is None:
             print('No trained classes found')
@@ -61,33 +62,37 @@ class knn_torch:
         #     # cl = self.y_data[nearest_idx]
         #     cl = [self.y_data[i] for i in knn.indices]
         #     return cl
-        if len(x.shape) == 2:
-            clss = []
-            confs = []
-            for x_el in x:
-                knn_size = 20
-                dist = torch.norm(self.x_data - x_el, dim=1, p=None)
-                knn = dist.topk(knn_size, largest=False)
-                # nearest_idx = knn.indices[0]
 
-                near_y = list(map(self.y_data.__getitem__, knn.indices))
+        if len(x.shape) == 1:
+            x = x.unsqueeze(0)
 
-                cl = mode(near_y)
+        # if len(x.shape) == 2:
+        clss = []
+        confs = []
+        for x_el in x:
+            knn_size = 20
+            dist = torch.norm(self.x_data - x_el, dim=1, p=None)
+            knn = dist.topk(knn_size, largest=False)
+            # nearest_idx = knn.indices[0]
 
-                frac = near_y.count(cl) / knn_size
+            near_y = list(map(self.y_data.__getitem__, knn.indices))
 
-                # print(near_y)
-                # print(mode(near_y))
-                # print(near_y.count(mode(near_y)) / knn_size)
-                # exit()
+            cl = mode(near_y)
 
-                # for d, gt in zip(dist, self.y_data):
-                #     print(d.data, gt)
+            frac = near_y.count(cl) / knn_size
 
-                # print(knn[0].data, nearest_idx)
+            # print(near_y)
+            # print(mode(near_y))
+            # print(near_y.count(mode(near_y)) / knn_size)
+            # exit()
 
-                # cl = self.y_data[nearest_idx]
-                # cl = mode(near_y)
-                clss.append(cl)
-                confs.append(frac)
-            return clss, confs
+            # for d, gt in zip(dist, self.y_data):
+            #     print(d.data, gt)
+
+            # print(knn[0].data, nearest_idx)
+
+            # cl = self.y_data[nearest_idx]
+            # cl = mode(near_y)
+            clss.append(cl)
+            confs.append(frac)
+        return clss, confs
