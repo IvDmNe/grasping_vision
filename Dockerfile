@@ -68,17 +68,16 @@ RUN pip3 install -e detectron2_repo
 RUN pip3 install pandas rospkg scipy
 
 
-# clone project and install conda env
 
-RUN git clone https://github.com/IvDmNe/point_cloud_processing.git
-    # conda env create -f /point_cloud_processing/scripts/cv_env.yml && \
-    # echo "conda activate cv" >> ~/.bashrc
 
 EXPOSE 11311
 
+RUN git clone https://github.com/IvDmNe/point_cloud_processing.git
+
+
+
 
 # install cv_bridge for python3
-
 
 RUN apt-get update && apt-get install -y python-catkin-tools python-dev libopencv-dev
 RUN mkdir -p /cv_bridge_ws/src && \
@@ -108,26 +107,8 @@ RUN mkdir -p /cv_bridge_ws/src && \
 
 
 
-# # install PCL library
-# RUN sudo apt-get install libpcl-dev -y
+# install PCL library
+RUN sudo apt-get install libpcl-dev -y
 
-# RUN pip install --user 'git+https://github.com/facebookresearch/fvcore'
-# RUN git clone https://github.com/facebookresearch/detectron2 detectron2_repo
-# # set FORCE_CUDA because during `docker build` cuda is not accessible
-# ENV FORCE_CUDA="1"
-# # This will by default build detectron2 for all common cuda architectures and take a lot more time,
-# # because inside `docker build`, there is no way to tell which architecture will be used.
-# ARG TORCH_CUDA_ARCH_LIST="Kepler;Kepler+Tesla;Maxwell;Maxwell+Tegra;Pascal;Volta;Turing"
-# ENV TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST}"
 
-# RUN pip install --user -e detectron2_repo
-
-# RUN detectron2 -f https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
-  
-# RUN pip install detectron2 -f \
-#   https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
-
-# WORKDIR /point_cloud_processing/scripts
-
-# RUN echo "source "python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'"" >> ~/.bashrc
-
+WORKDIR /point_cloud_processing/scripts

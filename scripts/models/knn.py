@@ -2,15 +2,21 @@ import torch
 import os
 import pandas as pd
 import time
-# from statistics import mode
+from statistics import mode
 from scipy import stats as s
+
 
 class knn_torch:
     def __init__(self, datafile=None, savefile=None):
         self.x_data = None
         self.y_data = None
         self.save_file = datafile if not savefile else savefile
-        self.classes from scipy import stats as s('File found')
+        self.classes = None
+
+        if datafile:
+            print(f'loading data from file: {datafile}')
+            if (os.path.exists(datafile)):
+                print('File found')
                 data = torch.load(datafile)
                 self.x_data = data['x']
                 self.y_data = data['y']
