@@ -1,4 +1,5 @@
-FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
+
+FROM nvidia/cuda:11.1.1-cudnn8-runtime-ubuntu18.04
 
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     apt-utils \
@@ -12,6 +13,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     nano \
     cmake \
     gcc \
+    ninja-build \
+    ca-certificates
     cmake-curses-gui \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -34,6 +37,8 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh &
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
 
+EXPOSE 11311
+
 RUN conda init
 
 # clone project and install conda env
@@ -42,7 +47,6 @@ RUN git clone https://github.com/IvDmNe/point_cloud_processing.git && \
     conda env create -f /point_cloud_processing/scripts/cv_env.yml && \
     echo "conda activate cv" >> ~/.bashrc
 
-EXPOSE 11311
 
 
 # install cv_bridge for python3
@@ -95,6 +99,3 @@ RUN sudo apt-get install libpcl-dev -y
 #   https://dl.fbaipublicfiles.com/detectron2/wheels/cu111/torch1.8/index.html
 
 WORKDIR /point_cloud_processing/scripts
-
-# RUN echo "source "python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'"" >> ~/.bashrc
-
