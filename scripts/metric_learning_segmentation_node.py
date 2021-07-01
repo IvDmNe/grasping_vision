@@ -246,13 +246,13 @@ class ImageListener:
             if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
                 self.feed_features_to_classifier()
             
-            classes, confs = self.classifier.classify(features)
+            classes, confs, min_dists = self.classifier.classify(features)
 
             if isinstance(classes, str):
                 classes = [classes]
             if classes:
                 # draw labels and masks
-                for cl, conf, box, m in zip(classes, confs, boxes, pred_masks):
+                for cl, conf, min_dist, box, m in zip(classes, confs, min_dists, boxes, pred_masks):
                     idx = self.classifier.classes.index(cl)
                     c = self.colors[idx].astype(np.uint8).tolist()
 
@@ -268,7 +268,7 @@ class ImageListener:
                     # draw label
                     pt = (box[:2].round().long()) - 2
                     pt = (int(pt[0]), int(pt[1]))
-                    cv.putText(image_segmented, f'{cl} {conf:.2f}', pt,
+                    cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
                     # draw object masks

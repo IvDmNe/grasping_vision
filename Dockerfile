@@ -106,11 +106,10 @@ RUN mkdir -p /cv_bridge_ws/src && \
 # install PCL library
 RUN sudo apt-get install libpcl-dev -y
 
+# clone project and move to it's dir
 EXPOSE 11311
 RUN git clone https://github.com/IvDmNe/point_cloud_processing.git
-
-
-
 WORKDIR /point_cloud_processing/scripts
 
+# download segmentation model weights
 RUN wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl

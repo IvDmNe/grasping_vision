@@ -45,7 +45,6 @@ class knn_torch:
                     'y': self.y_data}, self.save_file)
 
     def classify(self, x):
-        print(x.shape)
 
         if self.x_data is None:
             print('No trained classes found')
@@ -57,10 +56,16 @@ class knn_torch:
 
         clss = []
         confs = []
+        min_dists = []
         for x_el in x:
             knn_size = 20
             dist = torch.norm(self.x_data - x_el, dim=1, p=None)
             knn = dist.topk(knn_size, largest=False)
+
+            # print(dist[knn.indices[0]])
+
+            smallest_dist = dist[knn.indices[0]]
+            min_dists.append(smallest_dist)
 
             near_y = list(map(self.y_data.__getitem__, knn.indices))
             cl = s.mode(near_y)[0]
@@ -68,4 +73,4 @@ class knn_torch:
 
             clss.append(cl)
             confs.append(frac)
-        return clss, confs
+        return clss, confs, min_dists
