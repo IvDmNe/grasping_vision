@@ -17,8 +17,8 @@ In docker:
 ```python3 metric_learning_segmentation_node.py'```
 
 
-### Run in desktop
-## Dependencies
+## Run in desktop
+# Dependencies
 ROS melodic
 
 For python:
@@ -41,7 +41,7 @@ For C++:
 * Eigen
 
 
-## Run 
+# Run 
 ```
 1. roslaunch launch/launch_them_all.launch
 2. rosrun scripts/command_node.py (in another terminal)
