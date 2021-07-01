@@ -22,8 +22,10 @@ class seg:
             "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.00  # set threshold for this model
         # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
-        self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
-            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+        # self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
+        #     "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+
+        self.cfg.MODEL.WEIGHTS = 'model_final_f10217.pkl'
         self.predictor = DefaultPredictor(self.cfg)
 
     def preprocess(self, original_image):

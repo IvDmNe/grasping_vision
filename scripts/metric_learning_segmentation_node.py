@@ -78,7 +78,6 @@ class ImageListener:
 
         self.embedder = image_embedder('mobilenetv3_small_128_models.pth')
         self.classifier = knn_torch(
-            # datafile='/home/ivan/ros_ws/src/pc_proc/scripts/knn_data_metric_learning.pth')
             datafile='knn_data_metric_learning.pth')
 
         ts = message_filters.ApproximateTimeSynchronizer(
@@ -97,7 +96,6 @@ class ImageListener:
             depth_cv = self.cv_bridge.imgmsg_to_cv2(
                 depth).copy().astype(np.float32)
             depth_cv /= 1000.0
-            # print('16UC1')
         else:
             rospy.logerr_throttle(
                 1, 'Unsupported depth type. Expected 16UC1 or 32FC1, got {}'.format(

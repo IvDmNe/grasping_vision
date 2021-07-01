@@ -94,5 +94,5 @@
         "/home/ivan/cvbridge_build_ws/install/lib/python3/dist-packages"
     ],
     "cmake.configureOnOpen": false,
-    "python.pythonPath": "/home/ivan/anaconda3/bin/python"
+    "python.pythonPath": "/home/iiwa/miniconda3/envs/cv/bin/python"
 }
