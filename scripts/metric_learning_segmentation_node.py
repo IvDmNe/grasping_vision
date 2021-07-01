@@ -136,12 +136,16 @@ class ImageListener:
 
             cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
             cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+            
+            # cur_mask = cv.erode(cur_mask, (3, 3))
 
             image_masked = cv.bitwise_and(image, image, mask=cur_mask)
 
             final_mask = image_masked[y1:y2, x1:x2]
 
             final_mask_sq = get_padded_image(final_mask)
+
+            
             final_masks.append(final_mask_sq)
 
         return final_masks, instances.pred_boxes.tensor, instances.pred_masks
@@ -179,6 +183,7 @@ class ImageListener:
             else:
                 self.x_data_to_save = torch.cat(
                     [self.x_data_to_save, features[center_idx].squeeze().unsqueeze(0)])
+        return center_idx
 
     def run_proc(self):
 
@@ -197,6 +202,9 @@ class ImageListener:
         # segment rgb image
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
+
+        # image = cv.resize(image, (848, 480))
+        # depth = cv.resize(depth, (848, 480))
 
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
@@ -240,14 +248,44 @@ class ImageListener:
             # choose only the nearest bbox to the center
             cl = self.working_mode.split(
                 ' ')[1]
-            self.save_data(features, cl, image.shape, boxes)
+            center_idx = self.save_data(features, cl, image.shape, boxes)
+
+            box = boxes[center_idx]
+            m = pred_masks[center_idx]
+
+            c = (127, 127, 127)
+
+            # draw bounding box
+            pts = box.detach().cpu().long()
+            cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                            (int(pts[2]), int(pts[3])), c, 2)
+
+            # draw object masks
+            x1, y1, x2, y2 = box.round().long()
+            sz = (int(x2 - x1), int(y2 - y1))
+
+            mask_rs = cv.resize(
+                m.squeeze().detach().cpu().numpy(), sz)
+
+            cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+            cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+            cntrs, _ = cv.findContours(
+                cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+            cv.drawContours(image_segmented, cntrs, -
+                            1, c, 2)
+
 
         elif self.working_mode == 'inference':
             if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
                 self.feed_features_to_classifier()
             
-            classes, confs, min_dists = self.classifier.classify(features)
 
+            ret = self.classifier.classify(features)
+            
+            if not ret:
+                return
+            classes, confs, min_dists = ret
             if isinstance(classes, str):
                 classes = [classes]
             if classes:
@@ -343,8 +381,7 @@ class ImageListener:
 
         rospy.logwarn('saving features')
 
-        # inl_inds = removeOutliers(self.x_data_to_save.cpu(), 1.5)
-        # self.x_data_to_save = self.x_data_to_save[inl_inds]
+        print(self.x_data_to_save.shape)
 
         self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
             1]] * self.x_data_to_save.shape[0])

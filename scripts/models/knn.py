@@ -71,6 +71,6 @@ class knn_torch:
             cl = s.mode(near_y)[0]
             frac = near_y.count(cl) / knn_size
 
-            clss.append(cl)
+            clss.append(cl[0])
             confs.append(frac)
         return clss, confs, min_dists

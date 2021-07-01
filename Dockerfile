@@ -65,13 +65,7 @@ ENV TORCH_CUDA_ARCH_LIST="${TORCH_CUDA_ARCH_LIST}"
 
 RUN pip3 install -e detectron2_repo
 
-RUN pip3 install pandas rospkg scipy
-
-
-
-
-
-
+RUN pip3 install pandas rospkg scipy pytimedinput
 
 # install cv_bridge for python3
 
@@ -102,14 +96,17 @@ RUN mkdir -p /cv_bridge_ws/src && \
 
 
 
+EXPOSE 11311
 
 # install PCL library
 RUN sudo apt-get install libpcl-dev -y
 
 # clone project and move to it's dir
-EXPOSE 11311
 RUN git clone https://github.com/IvDmNe/point_cloud_processing.git
 WORKDIR /point_cloud_processing/scripts
 
 # download segmentation model weights
 RUN wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl
+
+# CMD ["python3", "metric_learning_segmentation_node.py"]
+

@@ -8,3 +8,5 @@ build/
 scripts/knn_data_1.pth
 
 scripts/knn_data_2.pth
+
+scripts/model_final_f10217.pkl
