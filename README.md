@@ -14,10 +14,10 @@ It has several steps:
 
 In docker:
 
-```python -m pip install 'git+https://github.com/facebookresearch/detectron2.git'```
+```python3 metric_learning_segmentation_node.py'```
 
 
-
+### Run in desktop
 ## Dependencies
 ROS melodic
 
