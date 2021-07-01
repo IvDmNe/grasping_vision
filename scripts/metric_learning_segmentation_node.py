@@ -256,6 +256,10 @@ class ImageListener:
                     idx = self.classifier.classes.index(cl)
                     c = self.colors[idx].astype(np.uint8).tolist()
 
+                    # if confidence is less than the threshold, PAINT IT BLACK
+                    if conf < 0.5: 
+                        c = (0, 0, 0)
+
                     # draw bounding box
                     pts = box.detach().cpu().long()
                     cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),

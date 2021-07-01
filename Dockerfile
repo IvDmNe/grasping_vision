@@ -106,9 +106,9 @@ RUN mkdir -p /cv_bridge_ws/src && \
 # install PCL library
 RUN sudo apt-get install libpcl-dev -y
 
+EXPOSE 11311
 RUN git clone https://github.com/IvDmNe/point_cloud_processing.git
 
-EXPOSE 11311
 
 
 WORKDIR /point_cloud_processing/scripts
