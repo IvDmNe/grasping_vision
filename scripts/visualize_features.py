@@ -46,5 +46,6 @@ if __name__ == '__main__':
         legend="full",
         # alpha=0.3
     )
-    plt.show()
     plt.savefig(f'vis_results_{datafile.split(".")[0]}.png')
+
+    plt.show()

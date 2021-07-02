@@ -4,6 +4,7 @@ import pandas as pd
 import time
 from statistics import mode
 from scipy import stats as s
+from scipy.spatial.distance import cdist
 
 
 class knn_torch:
@@ -59,10 +60,20 @@ class knn_torch:
         min_dists = []
         for x_el in x:
             knn_size = 20
-            dist = torch.norm(self.x_data - x_el, dim=1, p=None)
+
+            x_el = x_el.unsqueeze(0)
+            dist = cdist(x_el.cpu(), self.x_data.cpu(), metric='cosine').squeeze()
+            dist = torch.Tensor(dist)
+
+            # dist = torch.norm(self.x_data - x_el, dim=1, p=None)
+
+            print(dist.min(), dist.max())
+
+
             knn = dist.topk(knn_size, largest=False)
 
-            # print(dist[knn.indices[0]])
+            # print(knn)
+
 
             smallest_dist = dist[knn.indices[0]]
             min_dists.append(smallest_dist)
