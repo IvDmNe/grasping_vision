@@ -13,6 +13,7 @@ It has several steps:
 ```sh run_docker.sh```
 
 ## Desktop setup
+
 # Dependencies
 ROS melodic
 
