@@ -28,23 +28,6 @@ class seg:
         self.cfg.MODEL.WEIGHTS = 'model_final_f10217.pkl'
         self.predictor = DefaultPredictor(self.cfg)
 
-    # def preprocess(self, original_image):
-
-    #     with torch.no_grad():  # https://github.com/sphinx-doc/sphinx/issues/4258
-    #         # Apply pre-processing to image.
-    #         # if self.input_format == "RGB":
-    #         #     # whether the model expects BGR inputs or RGB
-    #         original_image = original_image[:, :, ::-1]
-    #         height, width = original_image.shape[:2]
-    #         image = self.predictor.aug.get_transform(
-    #             original_image).apply_image(original_image)
-    #         print(original_image.shape)
-    #         print(image.shape)
-    #         image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
-    #         print(image.shape)
-
-    #         inputs = {"image": image.cuda(), "height": height, "width": width}
-    #         return inputs
 
     def forward(self, image):
         with torch.no_grad():

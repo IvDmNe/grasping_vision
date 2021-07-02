@@ -67,12 +67,11 @@ class knn_torch:
 
             # dist = torch.norm(self.x_data - x_el, dim=1, p=None)
 
-            print(dist.min(), dist.max())
+            # print(dist.min(), dist.max())
 
 
             knn = dist.topk(knn_size, largest=False)
 
-            # print(knn)
 
 
             smallest_dist = dist[knn.indices[0]]

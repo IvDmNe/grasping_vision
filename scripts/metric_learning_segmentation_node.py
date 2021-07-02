@@ -203,8 +203,7 @@ class ImageListener:
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
 
-        # image = cv.resize(image, (848, 480))
-        # depth = cv.resize(depth, (848, 480))
+ 
 
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
