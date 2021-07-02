@@ -10,10 +10,11 @@ It has several steps:
 
 ```sh build_docker.sh```
 
-```sh run_docker.sh```
+```sh run_docker.sh``` (requires nvidia-docker-toolkit https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
 
-## Desktop setup
-# Dependencies
+# Desktop setup
+
+## Dependencies
 ROS melodic
 
 For python:
