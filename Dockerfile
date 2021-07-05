@@ -102,50 +102,50 @@ EXPOSE 11311
 
 RUN apt-get install ros-melodic-pcl-ros ros-melodic-image-pipeline -y
 
-ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}/opt/ros/melodic/share
-ARG CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}/opt/ros/melodic/share
+# ENV CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}/opt/ros/melodic/share
+# ARG CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}/opt/ros/melodic/share
 
 # clone project and move to it's dir
-RUN mkdir -p /ros_ws/src && \
-    cd /ros_ws && \
-    # catkin config \
-    #     -DCMAKE_BUILD_TYPE=Release \
-    #     -DSETUPTOOLS_DEB_LAYOUT=OFF \
-    #     -Drosconsole_DIR=/opt/ros/melodic/share/rosconsole/cmake \
-    #     -Droscpp_DIR=/opt/ros/melodic/share/roscpp/cmake \
-    #     -Drostime_DIR=/opt/ros/melodic/share/rostime/cmake \
-    #     -Droscpp_traits_DIR=/opt/ros/melodic/share/roscpp_traits/cmake \
-    #     -Dstd_msgs_DIR=/opt/ros/melodic/share/std_msgs/cmake \
-    #     -Droscpp_serialization_DIR=/opt/ros/melodic/share/roscpp_serialization/cmake \
-    #     -Dmessage_runtime_DIR=/opt/ros/melodic/share/message_runtime/cmake \
-    #     -Dmessage_filters_DIR=/opt/ros/melodic/share/message_filters/cmake \
-    #     -Dnodelet_DIR=/opt/ros/melodic/share/nodelet/cmake \
-    #     -Dbond_DIR=/opt/ros/melodic/share/bond/cmake \
-    #     -Dbondcpp_DIR=/opt/ros/melodic/share/bondcpp/cmake \
-    #     -Dgeometry_msgs_DIR=/opt/ros/melodic/share/geometry_msgs/cmake \
-    #     -Dsensor_msgs_DIR=/opt/ros/melodic/share/sensor_msgs/cmake \
-    #     -Drosgraph_msgs_DIR=/opt/ros/melodic/share/rosgraph_msgs/cmake \
-    #     -Dxmlrpcpp_DIR=/opt/ros/melodic/share/xmlrpcpp/cmake \
-    #     -Dsmclib_DIR=/opt/ros/melodic/share/smclib/cmake \        
-    #     -Dpluginlib_DIR=/opt/ros/melodic/share/pluginlib/cmake \
-    #     -Dclass_loader_DIR=/opt/ros/melodic/share/class_loader/cmake \
-    #     -Droslib_DIR=/opt/ros/melodic/share/roslib/cmake \
-    #     -Drospack_DIR=/opt/ros/melodic/share/rospack/cmake \
-    #     -Dnodelet_topic_tools_DIR=/opt/ros/melodic/share/nodelet_topic_tools/cmake \
-    #     -Dpcl_ros_DIR=/opt/ros/melodic/share/pcl_ros/cmake \
-    #     -Dpcl_conversions_DIR=/opt/ros/melodic/share/pcl_conversions/cmake \
-    #     -Dpcl_msgs_DIR=/opt/ros/melodic/share/pcl_msgs/cmake \
-    #     -Drosbag_DIR=/opt/ros/melodic/share/rosbag/cmake \
-    #     -Drosbag_storage_DIR=/opt/ros/melodic/share/rosbag_storage/cmake \
-    #     -Droslz4_DIR=/opt/ros/melodic/share/roslz4/cmake \
-    #     -Ddynamic_reconfigure_DIR=/opt/ros/melodic/share/dynamic_reconfigure/cmake \
-    #     # -Dstd_srvs_DIR=/opt/ros/melodic/share/std_srvs/cmake \
-    #     -Dcpp_common_DIR=/opt/ros/melodic/share/cpp_common/cmake && \
-    #     # --extend /opt/ros/melodic && \
-    cd src && \
-    git clone https://github.com/IvDmNe/grasping_vision && \
-    git clone https://github.com/ros/catkin.git && \
-    cd ..
+# RUN mkdir -p /ros_ws/src && \
+#     cd /ros_ws && \
+#     # catkin config \
+#     #     -DCMAKE_BUILD_TYPE=Release \
+#     #     -DSETUPTOOLS_DEB_LAYOUT=OFF \
+#     #     -Drosconsole_DIR=/opt/ros/melodic/share/rosconsole/cmake \
+#     #     -Droscpp_DIR=/opt/ros/melodic/share/roscpp/cmake \
+#     #     -Drostime_DIR=/opt/ros/melodic/share/rostime/cmake \
+#     #     -Droscpp_traits_DIR=/opt/ros/melodic/share/roscpp_traits/cmake \
+#     #     -Dstd_msgs_DIR=/opt/ros/melodic/share/std_msgs/cmake \
+#     #     -Droscpp_serialization_DIR=/opt/ros/melodic/share/roscpp_serialization/cmake \
+#     #     -Dmessage_runtime_DIR=/opt/ros/melodic/share/message_runtime/cmake \
+#     #     -Dmessage_filters_DIR=/opt/ros/melodic/share/message_filters/cmake \
+#     #     -Dnodelet_DIR=/opt/ros/melodic/share/nodelet/cmake \
+#     #     -Dbond_DIR=/opt/ros/melodic/share/bond/cmake \
+#     #     -Dbondcpp_DIR=/opt/ros/melodic/share/bondcpp/cmake \
+#     #     -Dgeometry_msgs_DIR=/opt/ros/melodic/share/geometry_msgs/cmake \
+#     #     -Dsensor_msgs_DIR=/opt/ros/melodic/share/sensor_msgs/cmake \
+#     #     -Drosgraph_msgs_DIR=/opt/ros/melodic/share/rosgraph_msgs/cmake \
+#     #     -Dxmlrpcpp_DIR=/opt/ros/melodic/share/xmlrpcpp/cmake \
+#     #     -Dsmclib_DIR=/opt/ros/melodic/share/smclib/cmake \        
+#     #     -Dpluginlib_DIR=/opt/ros/melodic/share/pluginlib/cmake \
+#     #     -Dclass_loader_DIR=/opt/ros/melodic/share/class_loader/cmake \
+#     #     -Droslib_DIR=/opt/ros/melodic/share/roslib/cmake \
+#     #     -Drospack_DIR=/opt/ros/melodic/share/rospack/cmake \
+#     #     -Dnodelet_topic_tools_DIR=/opt/ros/melodic/share/nodelet_topic_tools/cmake \
+#     #     -Dpcl_ros_DIR=/opt/ros/melodic/share/pcl_ros/cmake \
+#     #     -Dpcl_conversions_DIR=/opt/ros/melodic/share/pcl_conversions/cmake \
+#     #     -Dpcl_msgs_DIR=/opt/ros/melodic/share/pcl_msgs/cmake \
+#     #     -Drosbag_DIR=/opt/ros/melodic/share/rosbag/cmake \
+#     #     -Drosbag_storage_DIR=/opt/ros/melodic/share/rosbag_storage/cmake \
+#     #     -Droslz4_DIR=/opt/ros/melodic/share/roslz4/cmake \
+#     #     -Ddynamic_reconfigure_DIR=/opt/ros/melodic/share/dynamic_reconfigure/cmake \
+#     #     # -Dstd_srvs_DIR=/opt/ros/melodic/share/std_srvs/cmake \
+#     #     -Dcpp_common_DIR=/opt/ros/melodic/share/cpp_common/cmake && \
+#     #     # --extend /opt/ros/melodic && \
+#     cd src && \
+#     # git clone https://github.com/IvDmNe/grasping_vision && \
+#     # git clone https://github.com/ros/catkin.git && \
+#     cd ..
     
     # catkin config --install && \
     # catkin build grasping_vision && \
