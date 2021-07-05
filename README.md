@@ -19,13 +19,38 @@ cd grasping_vision
 Build docker image
 
 ```sh build_docker.sh```
+Install nvidia-container-toolkit to use GPU in docker: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
 
-```sh run_docker.sh``` (requires nvidia-docker-toolkit https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
+# Run
+Run realsense with ROS:
+```roslaunch launch rs_aligned_depth.launch```
+(Opionally) Open rviz: ```rviz -d rviz_config.rviz```
 
-# Run 
+
+Start docker
+
+```sh run_docker.sh``` 
+
+Prepare ros project and build it:
 ```
-1. roslaunch launch/launch_them_all.launch
-2. rosrun scripts/command_node.py (in another terminal)
+source cv_bridge_ws/devel/setup.bash
+cd ws
+catkin_make
+source devel/setup.bash
+```
+Launch node for segmentation and bouding box calculating:
+```
+cd src/grasping_vision
+roslaunch launch/launch_them_all.launch
+```
+
+
+Open another terminal and run command_node.py:
+
+```
+sudo docker ps (to get a name of running container)
+sudo docker exec -it -w /ws/src/grasping_vision/scripts name_of_container bash
+python3 command_node.py
 ```
 
 ## Usage
@@ -35,6 +60,8 @@ In the command_node user can enter one of the following commands:
   * train {name of object}
   * give {name of object}
   
-1. In inference mode the segmentation node segments image and classify each object. One random bounding box is outputed
+1. In inference mode the segmentation node segments image and classify each object. One random bounding box is outputed to a topic ```/obb_array```
 2. In train mode the node stores all images of an object for 30 seconds and then feed deep features of them into KNN-classifier
-3. In give mode the image is segmented and the coordinates of bouding box of a desired object are sent to the topic ```/obb_array```
+3. In give mode the image is segmented and the coordinates of bouding box of a desired object are sent to a topic ```/obb_array```
+
+the topic ```/obb_array``` has float32 one-dimensional array representing a pose of the bounding box in the followong format: [major_vector, middle_vector, mass_center, dimensions].
