@@ -15,6 +15,8 @@ cd ~/ros_ws/src
 git clone https://github.com/IvDmNe/grasping_vision.git
 cd grasping_vision
 ```
+Change line 7 in ```run_docker.sh``` according to your workspace location:
+```    -v your_path_to_workspace:/ws \```
 
 Build docker image
 
