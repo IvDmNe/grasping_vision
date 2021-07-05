@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 from scipy.spatial.distance import euclidean, cosine
-
+from matplotlib import pyplot as plt
 
 def get_centers(cntrs):
     if isinstance(cntrs, list):
@@ -42,7 +42,7 @@ def find_nearest_to_center_cntr(cntrs, imsize):
     dist, nearest = find_nearest(centers, im_center)
 
     if dist > 100:
-        return None
+        return Noneboxes
 
     return cntrs[nearest]
 
@@ -88,7 +88,10 @@ def get_one_mask(boxes, mask, image, n_mask=None):
 
     cur_mask = np.zeros((image.shape[: -1]))
     cur_mask[y1: y2, x1: x2] = mask_rs
-    return cv.threshold(cur_mask, 0.5, 1.0, cv.THRESH_BINARY)[1]
+    ret, res = cv.threshold(cur_mask, 0.5, 1.0, cv.THRESH_BINARY)
+    
+    
+    return res
 
 
 def removeOutliers(x, outlierConstant):

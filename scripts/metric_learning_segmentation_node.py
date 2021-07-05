@@ -1,4 +1,4 @@
-#!/home/ivan/anaconda3/bin/python
+#!/usr/bin/python3
 
 
 # this project packages
@@ -151,6 +151,7 @@ class ImageListener:
         return final_masks, instances.pred_boxes.tensor, instances.pred_masks
 
     def send_images_to_topics(self, image_masked=None, depth_masked=None, image_segmented=None):
+
         if image_masked is not None:
             rgb_msg = self.cv_bridge.cv2_to_imgmsg(image_masked)
             rgb_msg.header.stamp = rospy.Time.now()
@@ -322,9 +323,9 @@ class ImageListener:
 
                     cv.drawContours(image_segmented, cntrs, -
                                     1, c, 2)
-
                 mask = get_one_mask(
                     boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
+                # print(mask)
 
         elif self.working_mode.split(' ')[0] == 'give':
             demand_class = self.working_mode.split(' ')[1]
@@ -345,15 +346,15 @@ class ImageListener:
                 mask = get_one_mask(
                     boxes.cpu().int().numpy(), pred_masks, image, idx).astype(np.uint8)
                 # apply masking
-                image_masked = cv.bitwise_and(image, image, mask=mask)
-                depth_masked = cv.bitwise_and(depth, depth, mask=mask)
 
         else:
             rospy.logerr_throttle(
                 1, f'invalid working mode: {self.working_mode}')
             return
-
+        image_masked = cv.bitwise_and(image, image, mask=mask)
+        depth_masked = cv.bitwise_and(depth, depth, mask=mask)
         self.send_images_to_topics(image_masked, depth_masked, image_segmented)
+
 
         end = time.time()
         fps = 1 / (end - start)

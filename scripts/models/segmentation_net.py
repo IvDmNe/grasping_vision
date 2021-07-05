@@ -13,6 +13,7 @@ from torchvision.ops import nms
 import rospy
 import os
 from pathlib import Path
+import pwd
 
 class seg:
     def __init__(self):
@@ -25,7 +26,14 @@ class seg:
         # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
         # self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
         #     "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
-        if not Path('model_final_f10217.pkl').isfile():
+
+        # username = pwd.getpwuid( os.getuid() )[ 0 ]
+        
+        new_dir = '/ws/src/grasping_vision/scripts'
+        rospy.logwarn(f'current dir: {os.getcwd()}. Changing to {new_dir}')
+        os.chdir(new_dir)
+        rospy.logwarn(f'No model weights found in {os.getcwd()}, downloading...')
+        if not Path('model_final_f10217.pkl').is_file():
             os.system('wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl')
 
         self.cfg.MODEL.WEIGHTS = 'model_final_f10217.pkl'
