@@ -8,27 +8,17 @@ It has several steps:
 
 ## Docker setup
 
+Create workspace folder, src folder in it and clone this repo into it:
+```mkdir -p ~/ros_ws/src
+cd ~/ros_ws/src
+git clone https://github.com/IvDmNe/grasping_vision.git
+cd grasping_vision```
+
+Build docker image
+
 ```sh build_docker.sh```
 
 ```sh run_docker.sh``` (requires nvidia-docker-toolkit https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker)
-
-# Desktop setup
-
-## Dependencies
-ROS melodic
-
-For python:
-
-Install conda and create env:
-
-```conda env create -f scripts/cv_env.yml```
-
-Additionally, install opencv_bridge for ROS (i.e. from https://cyaninfinite.com/ros-cv-bridge-with-python-3/)
-
-Libraries for C++:
-* PCL 
-* Eigen
-
 
 # Run 
 ```
