@@ -64,4 +64,4 @@ In the command_node user can enter one of the following commands:
 2. In train mode the node stores all images of an object for 30 seconds and then feed deep features of them into KNN-classifier
 3. In give mode the image is segmented and the coordinates of bouding box of a desired object are sent to a topic ```/obb_array```
 
-the topic ```/obb_array``` has float32 one-dimensional array representing a pose of the bounding box in the followong format: [major_vector, middle_vector, mass_center, dimensions].
+The topic ```/obb_array``` has float32 one-dimensional array representing a pose of the bounding box in the followong format: [major_vector, middle_vector, mass_center, dimensions].
