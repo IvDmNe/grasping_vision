@@ -9,10 +9,12 @@ It has several steps:
 ## Docker setup
 
 Create workspace folder, src folder in it and clone this repo into it:
-```mkdir -p ~/ros_ws/src
+```
+mkdir -p ~/ros_ws/src
 cd ~/ros_ws/src
 git clone https://github.com/IvDmNe/grasping_vision.git
-cd grasping_vision```
+cd grasping_vision
+```
 
 Build docker image
 
