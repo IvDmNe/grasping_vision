@@ -118,7 +118,7 @@ RUN apt-get install ros-melodic-pcl-ros ros-melodic-image-pipeline -y
 #     #     -Dstd_msgs_DIR=/opt/ros/melodic/share/std_msgs/cmake \
 #     #     -Droscpp_serialization_DIR=/opt/ros/melodic/share/roscpp_serialization/cmake \
 #     #     -Dmessage_runtime_DIR=/opt/ros/melodic/share/message_runtime/cmake \
-#     #     -Dmessage_filters_DIR=/opt/ros/melodic/share/message_filters/cmake \
+#     #     -Dmessage_filters_DIR=/opt/ros/melodic/share/message_fchange mod ubuntuilters/cmake \
 #     #     -Dnodelet_DIR=/opt/ros/melodic/share/nodelet/cmake \
 #     #     -Dbond_DIR=/opt/ros/melodic/share/bond/cmake \
 #     #     -Dbondcpp_DIR=/opt/ros/melodic/share/bondcpp/cmake \

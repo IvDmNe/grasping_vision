@@ -11,7 +11,8 @@ import numpy as np
 # from detectron2.layers.nms import batched_nms
 from torchvision.ops import nms
 import rospy
-
+import os
+from pathlib import Path
 
 class seg:
     def __init__(self):
@@ -24,6 +25,8 @@ class seg:
         # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
         # self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
         #     "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
+        if not Path('model_final_f10217.pkl').isfile():
+            os.system('wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl')
 
         self.cfg.MODEL.WEIGHTS = 'model_final_f10217.pkl'
         self.predictor = DefaultPredictor(self.cfg)
