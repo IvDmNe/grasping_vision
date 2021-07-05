@@ -4,6 +4,6 @@ sudo docker run \
     --net host \
     --gpus all \
     --rm \
-    -v /home/iiwa/Nenakhov:/iiwa \
+    -v ~/:/local \
     -it \
     ivan/cv 
