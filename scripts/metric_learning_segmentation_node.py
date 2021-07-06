@@ -117,10 +117,10 @@ class ImageListener:
 
     def do_segmentation(self, image):
 
-        seg_mask_features, instances = self.seg_net.forward(
+        instances = self.seg_net.forward(
             image)
 
-        if len(seg_mask_features) == 0 or len(instances.pred_boxes.tensor) == 0:
+        if len(instances.pred_boxes.tensor) == 0:
             rospy.logerr_throttle(2, 'no objects found')
             return
 

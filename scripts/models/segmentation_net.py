@@ -3,8 +3,10 @@ from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2 import model_zoo
 from detectron2.structures import ImageList
-
+from detectron2.modeling import build_model
 from detectron2.structures import Instances
+from detectron2.checkpoint import DetectionCheckpointer
+
 import torch
 # import cv2 as cv
 import numpy as np
@@ -14,6 +16,7 @@ import rospy
 import os
 from pathlib import Path
 import pwd
+# import torch2trt
 
 class seg:
     def __init__(self):
@@ -41,6 +44,16 @@ class seg:
         self.cfg.MODEL.WEIGHTS = 'model_final_f10217.pkl'
         self.predictor = DefaultPredictor(self.cfg)
 
+        self.model = build_model(self.cfg)
+        self.model.eval()
+
+        checkpointer = DetectionCheckpointer(self.model)
+        checkpointer.load(self.cfg.MODEL.WEIGHTS)
+
+        
+
+
+
 
     def forward(self, image):
         with torch.no_grad():
@@ -48,14 +61,14 @@ class seg:
             t_image = ImageList.from_tensors(
                 [torch.Tensor(image).permute(2, 0, 1)])
 
-            features = self.predictor.model.backbone(
+            features = self.model.backbone(
                 t_image.tensor.cuda())
 
-            proposals, _ = self.predictor.model.proposal_generator(
+            proposals, _ = self.model.proposal_generator(
                 t_image, features)
 
             mask_features = [features[f]
-                             for f in self.predictor.model.roi_heads.in_features]
+                             for f in self.model.roi_heads.in_features]
 
             min_idx = -1
             ids = []
@@ -73,19 +86,11 @@ class seg:
             inds_after_nms = nms(
                 proposals[0].proposal_boxes[ids].tensor.cpu(), proposals[0].objectness_logits[ids].cpu(), 0.3)
 
-            # mask_features = self.predictor.model.roi_heads.mask_pooler(
-            #     mask_features, [proposals[0].proposal_boxes[ids][inds_after_nms]])
-
-            # rospy.logerr(mask_features.shape)
-            # rospy.logerr(len(proposals[0].proposal_boxes[ids][inds_after_nms]))
-
             new_prop = proposals[0][ids][inds_after_nms]
 
-            # rospy.logerr(features)
-            # rospy.logerr(new_prop.proposal_boxes.tensor.shape)
-            instances, _ = self.predictor.model.roi_heads(
+            instances, _ = self.model.roi_heads(
                 t_image, features, [new_prop])
-            # rospy.logerr(instances[0].pred_classes)
+
 
             if len(instances[0]) > len(new_prop):
                 instances[0] = instances[0][:len(new_prop)]
@@ -93,7 +98,7 @@ class seg:
             insts_inds_after_nms = nms(
                 instances[0].pred_boxes.tensor, instances[0].scores, 0.8)
 
-            mask_features = self.predictor.model.roi_heads.mask_pooler(
-                mask_features, [instances[0][insts_inds_after_nms].pred_boxes])
+            # mask_features = self.model.roi_heads.mask_pooler(
+            #     mask_features, [instances[0][insts_inds_after_nms].pred_boxes])
 
-            return mask_features, instances[0][insts_inds_after_nms]
+            return instances[0][insts_inds_after_nms]
