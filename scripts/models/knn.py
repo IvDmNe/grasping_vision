@@ -8,7 +8,9 @@ from scipy.spatial.distance import cdist
 
 
 class knn_torch:
-    def __init__(self, datafile=None, savefile=None):
+    def __init__(self, datafile=None, savefile=None, knn_size=10):
+
+        self.knn_size = knn_size
         self.x_data = None
         self.y_data = None
         self.save_file = datafile if not savefile else savefile
@@ -59,7 +61,7 @@ class knn_torch:
         confs = []
         min_dists = []
         for x_el in x:
-            knn_size = 20
+
 
             x_el = x_el.unsqueeze(0)
             dist = cdist(x_el.cpu(), self.x_data.cpu(), metric='cosine').squeeze()
@@ -70,7 +72,7 @@ class knn_torch:
             # print(dist.min(), dist.max())
 
 
-            knn = dist.topk(knn_size, largest=False)
+            knn = dist.topk(self.knn_size, largest=False)
 
 
 
@@ -79,7 +81,7 @@ class knn_torch:
 
             near_y = list(map(self.y_data.__getitem__, knn.indices))
             cl = s.mode(near_y)[0]
-            frac = near_y.count(cl) / knn_size
+            frac = near_y.count(cl) / self.knn_size
 
             clss.append(cl[0])
             confs.append(frac)
