@@ -17,18 +17,13 @@ import rospy
 import os
 from pathlib import Path
 import pwd
-import onnx
-import tensorrt as trt
 
-import pycuda.driver as cuda
-import pycuda.autoinit
 
 from matplotlib import pyplot as plt
 
 import yaml
 
-# logger to capture errors, warnings, and other information during the build and inference phases
-TRT_LOGGER = trt.Logger()
+
 class seg:
     def __init__(self):
         self.cfg = get_cfg()
@@ -65,44 +60,7 @@ class seg:
         checkpointer = DetectionCheckpointer(self.model)
         checkpointer.load(self.cfg.MODEL.WEIGHTS)
 
-        # convert model to tensorrt
-
-        # ONNX_FILE_PATH = 'Mask-RCNN_backbone.onnx'
-
-        # torch.onnx.export(self.model.backbone, torch.ones([1, 3, 480, 640]).cuda(), ONNX_FILE_PATH, input_names=['input'],
-        #           output_names=['output'], export_params=True)
-
-        # onnx_model = onnx.load(ONNX_FILE_PATH)
-        # onnx.checker.check_model(onnx_model)
-
-        # initialize TensorRT engine and parse ONNX model
-        # self.engine, self.context = build_engine(ONNX_FILE_PATH)
         
-        # # get sizes of input and output and allocate memory required for input data and for output data
-        # for binding in self.engine:
-        #     if self.engine.binding_is_input(binding):  # we expect only one input
-        #         input_shape = self.engine.get_binding_shape(binding)
-        #         input_size = trt.volume(input_shape) * self.engine.max_batch_size * np.dtype(np.float32).itemsize  # in bytes
-        #         self.device_input = cuda.mem_alloc(input_size)
-        #     else:  # and one output
-        #         output_shape = self.engine.get_binding_shape(binding)
-        #         # create page-locked memory buffers (i.e. won't be swapped to disk)
-        #         self.host_output = cuda.pagelocked_empty(trt.volume(output_shape) * self.engine.max_batch_size, dtype=np.float32)
-        #         self.device_output = cuda.mem_alloc(self.host_output.nbytes)
-
-        
-        # # Create a stream in which to copy inputs/outputs and run inference.
-        # self.stream = cuda.Stream()
-
-
-
-
-
-        # sample_im = torch.ones([1, 3, 480, 640])
-        # self.t_backbone = torch2trt(self.model.backbone, [sample_im.cuda()])
-
-        # self.convert_to_trt()
-
         
         
 
@@ -194,30 +152,3 @@ class seg:
             return instances[0][insts_inds_after_nms]
 
 
-# def build_engine(onnx_file_path):
-#             # initialize TensorRT engine and parse ONNX model
-#             builder = trt.Builder(TRT_LOGGER)
-#             network = builder.create_network()
-#             parser = trt.OnnxParser(network, TRT_LOGGER)
-            
-#             # parse ONNX
-#             with open(onnx_file_path, 'rb') as model:
-#                 print('Beginning ONNX file parsing')
-#                 parser.parse(model.read())
-#             print('Completed parsing of ONNX file')
-
-#             # allow TensorRT to use up to 1GB of GPU memory for tactic selection
-#             builder.max_workspace_size = 1 << 30
-#             # we have only one image in batch
-#             builder.max_batch_size = 1
-#             # use FP16 mode if possible
-#             if builder.platform_has_fast_fp16:
-#                 builder.fp16_mode = True
-                
-#             # generate TensorRT engine optimized for the target platform
-#             print('Building an engine...')
-#             engine = builder.build_cuda_engine(network)
-#             context = engine.create_execution_context()
-#             print("Completed creating Engine")
-
-#             return engine, context
