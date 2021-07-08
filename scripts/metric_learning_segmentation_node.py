@@ -333,7 +333,7 @@ class ImageListener:
             demand_class = self.working_mode.split(' ')[1]
             rospy.logwarn(f'Command: {self.working_mode}')
             self.working_mode = 'inference'
-            classes = self.classifier.classify(features.squeeze())
+            classes, confs, dists = self.classifier.classify(features.squeeze())
 
             if isinstance(classes, str):
                 classes = [classes]
@@ -349,12 +349,14 @@ class ImageListener:
                     boxes.cpu().int().numpy(), pred_masks, image, idx).astype(np.uint8)
                 # apply masking
 
+                image_masked = cv.bitwise_and(image, image, mask=mask)
+                depth_masked = cv.bitwise_and(depth, depth, mask=mask)
+
         else:
             rospy.logerr_throttle(
                 1, f'invalid working mode: {self.working_mode}')
             return
-        image_masked = cv.bitwise_and(image, image, mask=mask)
-        depth_masked = cv.bitwise_and(depth, depth, mask=mask)
+        
         self.send_images_to_topics(image_masked, depth_masked, image_segmented)
 
 
