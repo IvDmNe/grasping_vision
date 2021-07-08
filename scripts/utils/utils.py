@@ -69,7 +69,7 @@ def get_nearest_to_center_box(im_shape, boxes):
     min_idx = -1
     for idx, box in enumerate(boxes):
         box_center = ((box[3] + box[1]) // 2, (box[2] + box[0]) // 2)
-        dist = cosine(box_center, center)
+        dist = euclidean(box_center, center)
         if dist < min_dist:
             min_dist = dist
             min_idx = idx

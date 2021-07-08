@@ -78,7 +78,8 @@ class ImageListener:
 
         self.embedder = image_embedder('mobilenetv3_small_128_models.pth')
         self.classifier = knn_torch(
-            datafile='knn_data_metric_learning.pth')
+            datafile='test_data_own.pth')
+            # datafile='knn_data_metric_learning.pth')
 
         ts = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], 1, 0.1)
@@ -171,7 +172,7 @@ class ImageListener:
             mask_msg.encoding = 'bgr8'
             self.segmented_view_pub.publish(mask_msg)
 
-    def save_data(self, features, cl, im_shape, boxes):
+    def save_data(self, features, im_shape, boxes):
 
         center_idx = get_nearest_to_center_box(
             im_shape, boxes.cpu().numpy())
@@ -248,12 +249,12 @@ class ImageListener:
             # choose only the nearest bbox to the center
             cl = self.working_mode.split(
                 ' ')[1]
-            center_idx = self.save_data(features, cl, image.shape, boxes)
+            center_idx = self.save_data(features, image.shape, boxes)
 
             box = boxes[center_idx]
             m = pred_masks[center_idx]
 
-            c = (127, 127, 127)
+            c = (255, 0, 0)
 
             # draw bounding box
             pts = box.detach().cpu().long()
@@ -274,6 +275,7 @@ class ImageListener:
 
             cv.drawContours(image_segmented, cntrs, -
                             1, c, 2)
+            mask = cur_mask
 
 
         elif self.working_mode == 'inference':
