@@ -29,10 +29,10 @@ class seg:
         self.cfg = get_cfg()
 
         # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
-        # self.cfg.merge_from_file(model_zoo.get_config_file(
-        #     "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
+        self.cfg.merge_from_file(model_zoo.get_config_file(
+            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
 
-        self.cfg.merge_from_file('model_config.yaml')
+        # self.cfg.merge_from_file('model_config.yaml')
 
 
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.00  # set threshold for this model
@@ -44,10 +44,10 @@ class seg:
         
         new_dir = '/ws/src/grasping_vision/scripts'
         rospy.logwarn(f'current dir: {os.getcwd()}. Changing to {new_dir}')
-        # os.chdir(new_dir)
+        os.chdir(new_dir)
         rospy.logwarn(f'No model weights found in {os.getcwd()}, downloading...')
-        # if not Path('model_final_f10217.pkl').is_file():
-        #     os.system('wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl')
+        if not Path('model_final_f10217.pkl').is_file():
+            os.system('wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl')
 
         self.cfg.MODEL.WEIGHTS = 'model_final_f10217.pkl'
 
