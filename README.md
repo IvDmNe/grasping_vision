@@ -35,7 +35,6 @@ Start docker
 
 Prepare ros project and build it:
 ```
-source cv_bridge_ws/devel/setup.bash --extend
 cd ws
 catkin_make
 source devel/setup.bash
