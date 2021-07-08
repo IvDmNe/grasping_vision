@@ -10,3 +10,9 @@ scripts/knn_data_1.pth
 scripts/knn_data_2.pth
 
 scripts/model_final_f10217.pkl
+
+scripts/saved_masks/box/
+
+scripts/test_data_coil-100.pth
+
+*.png

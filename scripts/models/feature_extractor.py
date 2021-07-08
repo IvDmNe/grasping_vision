@@ -59,6 +59,8 @@ class image_embedder(nn.Module):
 
         if isinstance(x, list):
             x = torch.stack([self.transforms(i) for i in x])
+        else:
+            x = self.transforms(x)
 
         x = x.to(self.device)
 
