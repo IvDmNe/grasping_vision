@@ -5,8 +5,8 @@ from torchvision import transforms
 from models.mlp import MLP
 import torchvision
 # from pytorch_metric_learning.utils import common_functions
-
-
+from matplotlib import pyplot as plt
+import cv2 as cv
 class feature_extractor(nn.Module):
 
     def __init__(self, backbone):
@@ -29,20 +29,25 @@ class Identity(torch.nn.Module):
 
 
 class image_embedder(nn.Module):
-    def __init__(self, file):
+    def __init__(self, trunk_file='models/trunk_1.pth', emb_file='models/embedder_1.pth', emb_size=16):
         super().__init__()
 
         self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         self.trunk = torchvision.models.mobilenet_v3_small()
         self.trunk.classifier = Identity()
-        self.embedder = MLP([576, 128])
+        self.embedder = MLP([576, emb_size])
+
+        # self.trunk = torchvision.models.resnet50()
+        # self.trunk.fc = Identity()
+
+        # self.embedder = MLP([2048, emb_size])
 
         self.trunk.load_state_dict(
-            torch.load('models/trunk_1.pth'))
+            torch.load(trunk_file))
 
         self.embedder.load_state_dict(torch.load(
-            'models/embedder_1.pth'))
+            emb_file))
 
         self.trunk.to(self.device)
         self.embedder.to(self.device)
@@ -56,6 +61,8 @@ class image_embedder(nn.Module):
         self.eval()
 
     def forward(self, x):
+
+
 
         if isinstance(x, list):
             x = torch.stack([self.transforms(i) for i in x])

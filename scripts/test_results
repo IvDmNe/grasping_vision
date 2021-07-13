@@ -1,0 +1,139 @@
+emb_sz: 16, acc: 0.933
+emb_sz: 16, acc: 0.911
+emb_sz: 16, acc: 0.907
+emb_sz: 16, acc: 0.926
+emb_sz: 16, acc: 0.926
+emb_sz: 16, acc: 0.926
+emb_sz: 32, acc: 0.995
+emb_sz: 64, acc: 0.995
+emb_sz: 64, acc: 0.995
+emb_sz: 64, acc: 0.995
+emb_sz: 64, acc: 0.993
+emb_sz: 32, acc: 0.978
+emb_sz: 128, acc: 0.993
+emb_sz: 16, acc: 0.926 50 cl
+emb_sz: 32, acc: 0.978 50 cl
+emb_sz: 64, acc: 0.981 50 cl
+emb_sz: 128, acc: 0.996 50 cl
+emb_sz: 16, acc: 0.926 50 cl
+emb_sz: 32, acc: 0.978 50 cl
+emb_sz: 64, acc: 0.981 50 cl
+emb_sz: 128, acc: 0.996 50 cl
+emb_sz: 16, acc: 0.926_50cl
+emb_sz: 16, acc: 0.926_50cl
+emb_sz: 16, acc: 0.926_50cl
+emb_sz: 16, acc: 0.926_50cl
+emb_sz: 16, acc: 0.926_50cl
+emb_sz: 32, acc: 0.978_50cl
+emb_sz: 64, acc: 0.981_50cl
+emb_sz: 128, acc: 0.996_50cl
+emb_sz: 16, acc: 0.926_100cl
+emb_sz: 32, acc: 0.978_100cl
+emb_sz: 64, acc: 0.981_100cl
+emb_sz: 128, acc: 0.996_100cl
+emb_sz: 16, acc: 0.944_100cl
+emb_sz: 32, acc: 0.985_100cl
+emb_sz: 64, acc: 0.989_100cl
+emb_sz: 128, acc: 0.996_100cl
+emb_sz: 16, acc: 0.881_100cl_resnet50
+emb_sz: 32, acc: 0.944_100cl_resnet50
+emb_sz: 16, acc: 0.881_100cl_resnet50
+emb_sz: 32, acc: 0.944_100cl_resnet50
+emb_sz: 64, acc: 0.970_100cl_resnet50
+emb_sz: 128, acc: 0.981_100cl_resnet50
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 1
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 4
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 7
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 10
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 13
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 16
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 19
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 22
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 25
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 1
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 4
+emb_sz: 32, acc: 0.944_100cl_resnet50_k: 7
+emb_sz: 32, k: 1 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 4 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 7 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 10 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 13 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 16 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 19 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 22 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 25 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 28 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 31 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 34 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 37 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 40 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 43 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 46 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 49 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 52 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 55 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 58 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 1 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 4 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 7 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 10 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 13 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 16 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 19 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 22 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 25 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 28 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 31 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 34 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 37 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 40 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 43 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 46 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 49 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 52 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 55 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 58 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 61 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 64 acc: 0.944_100cl_resnet50
+emb_sz: 32, k: 67 acc: 0.944_100cl_resnet50
+emb_sz: 64, k: 1 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 4 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 7 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 10 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 13 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 16 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 19 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 22 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 25 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 28 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 31 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 34 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 37 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 40 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 43 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 46 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 49 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 52 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 55 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 58 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 61 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 64 acc: 0.970_100cl_resnet50
+emb_sz: 64, k: 67 acc: 0.970_100cl_resnet50
+emb_sz: 128, k: 1 acc: 0.981_100cl_resnet50
+emb_sz: 128, k: 4 acc: 0.981_100cl_resnet50
+emb_sz: 32, k: 1 acc: 0.985_100cl_mobilenetv3_small
+emb_sz: 32, k: 4 acc: 0.985_100cl_mobilenetv3_small
+emb_sz: 32, k: 7 acc: 0.985_100cl_mobilenetv3_small
+emb_sz: 32, k: 10 acc: 0.985_100cl_mobilenetv3_small
+emb_sz: 32, k: 13 acc: 0.985_100cl_mobilenetv3_small
+emb_sz: 32, k: 1 acc: 1.000_100cl_mobilenetv3_small
+emb_sz: 32, k: 4 acc: 1.000_100cl_mobilenetv3_small
+emb_sz: 32, acc: 1.000_100cl_mobilenetv3_small
+emb_sz: 64, acc: 0.989_100cl_mobilenetv3_small
+emb_sz: 128, acc: 0.996_100cl_mobilenetv3_small
+emb_sz: 32, acc: 1.000_100cl_mobilenetv3_small
+emb_sz: 64, acc: 0.989_100cl_mobilenetv3_small
+emb_sz: 128, acc: 0.996_100cl_mobilenetv3_small
+emb_sz: 32, acc: 1.000_100cl_mobilenetv3_small
+emb_sz: 64, acc: 0.989_100cl_mobilenetv3_small
+emb_sz: 128, acc: 0.996_100cl_mobilenetv3_small

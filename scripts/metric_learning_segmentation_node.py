@@ -2,6 +2,7 @@
 
 
 # this project packages
+from torchvision.transforms.functional import perspective
 from models.segmentation_net import *
 from models.feature_extractor import image_embedder
 from models.mlp import MLP
@@ -28,8 +29,11 @@ import threading
 import cv2 as cv
 import time
 import numpy as np
+import re
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
-torch.set_grad_enabled
+torch.set_grad_enabled(False)
 
 setup_logger()
 
@@ -76,9 +80,24 @@ class ImageListener:
 
         self.seg_net = seg()
 
-        self.embedder = image_embedder('mobilenetv3_small_128_models.pth')
+        emb_size = 64
+
+        # folder = f'/home/iiwa/Nenakhov/metric_learning/example_saved_models/mobilenetv3_small_{emb_size}_100cl'
+        # fs = os.listdir(folder)
+
+        # r = re.compile("embedder_best")
+        # emb_file = folder + '/' + list(filter(r.match, fs))[0]
+
+        # r = re.compile("trunk_best")
+        # trunk_file = folder + '/' + list(filter(r.match, fs))[0]
+
+        emb_file = 'models/embedder_best1.pth'
+        trunk_file = 'models/trunk_best1.pth'
+
+
+        self.embedder = image_embedder(trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
         self.classifier = knn_torch(
-            datafile='test_data_own.pth')
+            datafile='datafiles/13_07_data_aug5.pth', knn_size=20)
             # datafile='knn_data_metric_learning.pth')
 
         ts = message_filters.ApproximateTimeSynchronizer(
@@ -86,6 +105,19 @@ class ImageListener:
         ts.registerCallback(self.callback_rgbd)
 
         self.colors = colormap()
+
+        self.transforms = A.Compose(
+           [A.LongestMaxSize(max_size=224),
+            A.PadIfNeeded(min_height=224, min_width=224),
+            A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.3, rotate_limit=60, p=0.5, border_mode=cv.BORDER_CONSTANT),
+            A.RGBShift(r_shift_limit=15, g_shift_limit=15, b_shift_limit=15, p=0.5),
+            A.Perspective(scale=(0.05, 0.2)),
+            A.RandomBrightnessContrast(p=0.5),
+            # A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+            # ToTensorV2(),
+            ]
+    )
+
 
         rospy.loginfo('Segmentaion node: Init complete')
 
@@ -138,7 +170,6 @@ class ImageListener:
             cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
             cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
             
-            # cur_mask = cv.erode(cur_mask, (3, 3))
 
             image_masked = cv.bitwise_and(image, image, mask=cur_mask)
 
@@ -172,19 +203,28 @@ class ImageListener:
             mask_msg.encoding = 'bgr8'
             self.segmented_view_pub.publish(mask_msg)
 
-    def save_data(self, features, im_shape, boxes):
+    def save_data(self, images_masked, im_shape, boxes):
 
         center_idx = get_nearest_to_center_box(
             im_shape, boxes.cpu().numpy())
 
+        # augment masked images before passing to embedder
+        imgs = [self.transforms(image=images_masked[center_idx])['image'] for _ in range(5)]
+            
+        
+        features = self.embedder(imgs)
+
+
         # check if bounding box is very different from previous
+
+
+
         if self.check_sim(boxes[center_idx].cpu().numpy()):
-            if self.x_data_to_save == None:
-                self.x_data_to_save = features[center_idx].squeeze(
-                ).unsqueeze(0)
+            if self.x_data_to_save is None:
+                self.x_data_to_save = features.squeeze()
             else:
                 self.x_data_to_save = torch.cat(
-                    [self.x_data_to_save, features[center_idx].squeeze().unsqueeze(0)])
+                    [self.x_data_to_save, features.squeeze()])
         return center_idx
 
     def run_proc(self):
@@ -201,11 +241,15 @@ class ImageListener:
             image = self.im.copy()
             depth = self.depth.copy()
 
+
+
+
         # segment rgb image
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
 
- 
+        # image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+
 
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
@@ -217,39 +261,42 @@ class ImageListener:
         # filter depth by 1 meter
         depth[depth > 1.0] = 1.0
 
-        with torch.no_grad():
-            features = self.embedder(images_masked)
+        if self.classifier.y_data is None:
+            # draw contours of found objects
+            for box, m in zip(boxes, pred_masks):
+                c = self.colors[0].astype(np.uint8).tolist()
 
-        # draw contours of found objects
-        for box, m in zip(boxes, pred_masks):
-            c = self.colors[0].astype(np.uint8).tolist()
+                # draw bounding box
+                pts = box.detach().cpu().long()
+                cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                            (int(pts[2]), int(pts[3])), c, 2)
 
-            # draw bounding box
-            pts = box.detach().cpu().long()
-            cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                         (int(pts[2]), int(pts[3])), c, 2)
+                # draw object masks
+                x1, y1, x2, y2 = box.round().long()
+                sz = (int(x2 - x1), int(y2 - y1))
 
-            # draw object masks
-            x1, y1, x2, y2 = box.round().long()
-            sz = (int(x2 - x1), int(y2 - y1))
+                mask_rs = cv.resize(
+                    m.squeeze().detach().cpu().numpy(), sz)
 
-            mask_rs = cv.resize(
-                m.squeeze().detach().cpu().numpy(), sz)
+                cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+                cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+                cntrs, _ = cv.findContours(
+                    cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-            cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
-            cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
-            cntrs, _ = cv.findContours(
-                cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
-            cv.drawContours(image_segmented, cntrs, -
-                            1, c, 2)
+                cv.drawContours(image_segmented, cntrs, -
+                                1, c, 2)
 
         # choose action according to working mode
         if self.working_mode.split(' ')[0] == 'train':
             # choose only the nearest bbox to the center
             cl = self.working_mode.split(
                 ' ')[1]
-            center_idx = self.save_data(features, image.shape, boxes)
+
+
+            
+
+
+            center_idx = self.save_data(images_masked, image.shape, boxes)
 
             box = boxes[center_idx]
             m = pred_masks[center_idx]
@@ -281,55 +328,57 @@ class ImageListener:
         elif self.working_mode == 'inference':
             if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
                 self.feed_features_to_classifier()
-            
 
+            features = self.embedder(images_masked)
             ret = self.classifier.classify(features)
             
-            if not ret:
-                return
-            classes, confs, min_dists = ret
-            if isinstance(classes, str):
-                classes = [classes]
-            if classes:
-                # draw labels and masks
-                for cl, conf, min_dist, box, m in zip(classes, confs, min_dists, boxes, pred_masks):
-                    idx = self.classifier.classes.index(cl)
-                    c = self.colors[idx].astype(np.uint8).tolist()
+            if ret:
+                classes, confs, min_dists = ret
 
-                    # if confidence is less than the threshold, PAINT IT BLACK
-                    if conf < 0.5: 
-                        c = (0, 0, 0)
+                if isinstance(classes, str):
+                    classes = [classes]
+                if classes:
+                    # draw labels and masks
+                    for cl, conf, min_dist, box, m in zip(classes, confs, min_dists, boxes, pred_masks):
+                        idx = self.classifier.classes.index(cl)
+                        c = self.colors[idx].astype(np.uint8).tolist()
 
-                    # draw bounding box
-                    pts = box.detach().cpu().long()
-                    cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                                 (int(pts[2]), int(pts[3])), c, 2)
+                        # if confidence is less than the threshold, PAINT IT BLACK
+                        if min_dist > 0.3 or conf < 0.8:
+                            continue 
+                            c = (0, 0, 0)
 
-                    # draw label
-                    pt = (box[:2].round().long()) - 2
-                    pt = (int(pt[0]), int(pt[1]))
-                    cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
-                               cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
+                        # draw bounding box
+                        pts = box.detach().cpu().long()
+                        cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                                    (int(pts[2]), int(pts[3])), c, 2)
 
-                    # draw object masks
-                    x1, y1, x2, y2 = box.round().long()
-                    sz = (int(x2 - x1), int(y2 - y1))
+                        # draw label
+                        pt = (box[:2].round().long()) - 2
+                        pt = (int(pt[0]), int(pt[1]))
+                        cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
+                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
-                    mask_rs = cv.resize(
-                        m.squeeze().detach().cpu().numpy(), sz)
+                        # draw object masks
+                        x1, y1, x2, y2 = box.round().long()
+                        sz = (int(x2 - x1), int(y2 - y1))
 
-                    cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
-                    cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
-                    cntrs, _ = cv.findContours(
-                        cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+                        mask_rs = cv.resize(
+                            m.squeeze().detach().cpu().numpy(), sz)
 
-                    cv.drawContours(image_segmented, cntrs, -
-                                    1, c, 2)
-                mask = get_one_mask(
-                    boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
-                # print(mask)
+                        cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+                        cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+                        cntrs, _ = cv.findContours(
+                            cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+                        cv.drawContours(image_segmented, cntrs, -
+                                        1, c, 2)
+                    mask = get_one_mask(
+                        boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
+                    # print(mask)
 
         elif self.working_mode.split(' ')[0] == 'give':
+            features = self.embedder(images_masked)
             demand_class = self.working_mode.split(' ')[1]
             rospy.logwarn(f'Command: {self.working_mode}')
             self.working_mode = 'inference'
@@ -384,11 +433,13 @@ class ImageListener:
         # feed saved features to classifier when working mode is changed to "inference"
 
         rospy.logwarn('saving features')
+        if self.x_data_to_save is not None:
+            print(self.x_data_to_save.shape)
 
-        print(self.x_data_to_save.shape)
-
-        self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
-            1]] * self.x_data_to_save.shape[0])
+            self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
+                1]] * self.x_data_to_save.shape[0])
+        else:
+            rospy.logwarn('No features were saved')
 
         self.x_data_to_save = None
         self.prev_mode = 'inference'

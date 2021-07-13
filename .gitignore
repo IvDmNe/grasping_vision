@@ -16,3 +16,7 @@ scripts/saved_masks/box/
 scripts/test_data_coil-100.pth
 
 *.png
+
+scripts/datafiles/13_07_data_aug.pth
+
+scripts/datafiles/13_07_data.pth

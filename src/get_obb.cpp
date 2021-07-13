@@ -76,6 +76,7 @@ class segmentPC
             std::cout<<"No data received"<<std::endl;
             return;
         }
+        receive_msg = false;
         double downsample_voxel_size = 0.002;
     //     double distance_thresh = 1.0;
     //     double plane_inliers_thresh = 0.02;

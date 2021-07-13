@@ -42,17 +42,17 @@ class seg:
 
         # username = pwd.getpwuid( os.getuid() )[ 0 ]
         
-        new_dir = '/ws/src/grasping_vision/scripts'
-        rospy.logwarn(f'current dir: {os.getcwd()}. Changing to {new_dir}')
-        os.chdir(new_dir)
+        # new_dir = '/ws/src/grasping_vision/scripts'
+        rospy.logwarn(f'current dir: {os.getcwd()}')
+        # os.chdir(new_dir)
         rospy.logwarn(f'No model weights found in {os.getcwd()}, downloading...')
         if not Path('model_final_f10217.pkl').is_file():
             os.system('wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl')
 
         self.cfg.MODEL.WEIGHTS = 'model_final_f10217.pkl'
 
-        with open('model_config.yaml', 'w') as fp:
-            yaml.dump(self.cfg, fp)
+        # with open('model_config.yaml', 'w') as fp:
+        #     yaml.dump(self.cfg, fp)
 
         self.model = build_model(self.cfg)
         self.model.eval()
@@ -102,7 +102,7 @@ class seg:
             ids = []
             for idx, (box, score) in enumerate(zip(proposals[0].proposal_boxes[:15], torch.sigmoid(proposals[0].objectness_logits[:15]))):
                 if score < 0.7:
-                    print(score)
+                    # print(score)
                     break
 
                 pts = box.detach().cpu().long()

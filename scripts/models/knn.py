@@ -5,6 +5,8 @@ import time
 from statistics import mode
 from scipy import stats as s
 from scipy.spatial.distance import cdist
+# from sklearn.neighbors import LocalOutlierFactor
+# from sklearn import svm
 
 
 class knn_torch:
@@ -15,6 +17,9 @@ class knn_torch:
         self.y_data = None
         self.save_file = datafile if not savefile else savefile
         self.classes = None
+
+        # self.outlier_estimator = LocalOutlierFactor(metric='minkowski', novelty=True)
+        # self.outlier_estimator = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
 
         if datafile:
             print(f'loading data from file: {datafile}')
@@ -30,8 +35,12 @@ class knn_torch:
 
                 if torch.cuda.is_available():
                     self.x_data = self.x_data.cuda()
+
+                # self.outlier_estimator.fit(self.x_data.cpu())
             else:
                 print('File not found')
+
+
 
     def add_points(self, x, y):
 
@@ -46,6 +55,8 @@ class knn_torch:
 
         torch.save({'x': self.x_data.detach().cpu(),
                     'y': self.y_data}, self.save_file)
+
+        # self.outlier_estimator.fit(self.x_data.cpu())
 
     def classify(self, x):
 
@@ -75,14 +86,24 @@ class knn_torch:
             knn = dist.topk(self.knn_size, largest=False)
 
 
-
-            smallest_dist = dist[knn.indices[0]]
-            min_dists.append(smallest_dist)
-
             near_y = list(map(self.y_data.__getitem__, knn.indices))
             cl = s.mode(near_y)[0]
+
+
             frac = near_y.count(cl) / self.knn_size
 
             clss.append(cl[0])
             confs.append(frac)
+
+            # print(self.outlier_estimator.n_samples_fit_, self.outlier_estimator.n_features_in_)
+
+            # smallest_dist = self.outlier_estimator.predict(x_el.cpu())[0]
+            # print(smallest_dist)
+
+            # smallest_dist = dist[knn.indices[0]]
+            # print(dist.min(), dist.max())
+            # avg_dist = dist[knn.indices].max()
+            min_dists.append(dist.min())
+
+
         return clss, confs, min_dists
