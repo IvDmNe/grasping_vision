@@ -97,7 +97,7 @@ class ImageListener:
 
         self.embedder = image_embedder(trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
         self.classifier = knn_torch(
-            datafile='datafiles/13_07_data_aug5.pth', knn_size=20)
+            datafile='datafiles/14_07_data_aug5.pth', knn_size=20)
             # datafile='knn_data_metric_learning.pth')
 
         ts = message_filters.ApproximateTimeSynchronizer(
@@ -109,14 +109,13 @@ class ImageListener:
         self.transforms = A.Compose(
            [A.LongestMaxSize(max_size=224),
             A.PadIfNeeded(min_height=224, min_width=224),
-            A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.3, rotate_limit=60, p=0.5, border_mode=cv.BORDER_CONSTANT),
+            A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.3, rotate_limit=180, p=0.5, border_mode=cv.BORDER_CONSTANT),
             A.RGBShift(r_shift_limit=15, g_shift_limit=15, b_shift_limit=15, p=0.5),
             A.Perspective(scale=(0.05, 0.2)),
             A.RandomBrightnessContrast(p=0.5),
             # A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
             # ToTensorV2(),
-            ]
-    )
+            ])
 
 
         rospy.loginfo('Segmentaion node: Init complete')
@@ -248,6 +247,9 @@ class ImageListener:
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
 
+        image = cv.resize(image, (640 // 2, 480 // 2))
+        depth = cv.resize(depth, (640 // 2, 480 // 2))
+
         # image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 
 
@@ -344,20 +346,9 @@ class ImageListener:
                         c = self.colors[idx].astype(np.uint8).tolist()
 
                         # if confidence is less than the threshold, PAINT IT BLACK
-                        if min_dist > 0.3 or conf < 0.8:
-                            continue 
+                        if min_dist > 0.2 or conf < 0.8:
+                            # continue 
                             c = (0, 0, 0)
-
-                        # draw bounding box
-                        pts = box.detach().cpu().long()
-                        cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                                    (int(pts[2]), int(pts[3])), c, 2)
-
-                        # draw label
-                        pt = (box[:2].round().long()) - 2
-                        pt = (int(pt[0]), int(pt[1]))
-                        cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
-                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
                         # draw object masks
                         x1, y1, x2, y2 = box.round().long()
@@ -373,6 +364,20 @@ class ImageListener:
 
                         cv.drawContours(image_segmented, cntrs, -
                                         1, c, 2)
+                        # if confidence is less than the threshold, don't draw label and confidence
+                        if min_dist > 0.2 or conf < 0.8:
+                            continue               
+                        # draw bounding box
+                        pts = box.detach().cpu().long()
+                        cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                                    (int(pts[2]), int(pts[3])), c, 2)
+
+                        # draw label
+                        pt = (box[:2].round().long()) - 2
+                        pt = (int(pt[0]), int(pt[1]))
+                        cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
+                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
+
                     mask = get_one_mask(
                         boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
                     # print(mask)

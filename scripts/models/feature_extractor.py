@@ -62,6 +62,9 @@ class image_embedder(nn.Module):
 
     def forward(self, x):
 
+        # cv.imshow('im', x[0])
+        # cv.waitKey()
+
 
 
         if isinstance(x, list):

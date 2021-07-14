@@ -73,81 +73,41 @@ class seg:
             t_image = ImageList.from_tensors(
                 [torch.Tensor(image).permute(2, 0, 1)])
 
-            # preprocess input data
-            # host_input = np.array(preprocess_image("turkish_coffee.jpg").numpy(), dtype=np.float32, order='C')
-            # cuda.memcpy_htod_async(self.device_input, t_image, self.stream)
-
-            # # run inference
-            # self.context.execute_async(bindings=[int(self.device_input), int(self.device_output)], stream_handle=self.stream.handle)
-            # cuda.memcpy_dtoh_async(self.host_output, self.device_output, self.stream)
-            # self.stream.synchronize()
-
-            # # postprocess results
-            # features = torch.Tensor(self.host_output).reshape(self.engine.max_batch_size, self.output_shape[0])
-            # postprocess(output_data)
-
 
 
             features = self.model.backbone(
                 t_image.tensor.cuda())
-            # print(features.shape)
 
             proposals, _ = self.model.proposal_generator(
                 t_image, features)
 
-            # mask_features = [features[f]
-            #                  for f in self.model.roi_heads.in_features]
 
             min_idx = -1
             ids = []
-            for idx, (box, score) in enumerate(zip(proposals[0].proposal_boxes[:15], torch.sigmoid(proposals[0].objectness_logits[:15]))):
-                if score < 0.7:
-                    # print(score)
+            for idx, (box, score) in enumerate(zip(proposals[0].proposal_boxes[:20], torch.sigmoid(proposals[0].objectness_logits[:20]))):
+
+                if score < 0.95:
                     break
 
                 pts = box.detach().cpu().long()
 
-                # if area is too big or if confidence is less than .92
+                # if area is too big or if confidence is less than threshold
                 if ((pts[2] - pts[0]) * (pts[3] - pts[1]) / (image.shape[0]*image.shape[1]) > 0.3):
                     continue
 
                 ids.append(idx)
-
             inds_after_nms = nms(
                 proposals[0].proposal_boxes[ids].tensor.cpu(), proposals[0].objectness_logits[ids].cpu(), 0.2)
 
 
             new_prop = proposals[0][ids][inds_after_nms]
 
-
-
-            # print(len(new_prop.proposal_boxes))
-
             instances, _ = self.model.roi_heads(
                 t_image, features, [new_prop])
 
-            # print(len(instances[0]))
-
-            # for box in new_prop.proposal_boxes:
-                    
-            #     # draw bounding box
-            #     pts = box.detach().cpu().long()
-            #     cv.rectangle(image, (int(pts[0]), int(pts[1])),
-            #                     (int(pts[2]), int(pts[3])), (0, 255, 0), 2)
             
-            # plt.imshow(image)
-            # plt.show()
-
-            # if len(instances[0]) > len(new_prop):
-            #     instances[0] = instances[0][:len(new_prop)]
-
             insts_inds_after_nms = nms(
                 instances[0].pred_boxes.tensor, instances[0].scores, 0.4)
-
-            # print(insts_inds_after_nms.shape)
-
-            # mask_features = self.model.roi_heads.mask_pooler(
-            #     mask_features, [instances[0][insts_inds_after_nms].pred_boxes])
 
             return instances[0][insts_inds_after_nms]
 
