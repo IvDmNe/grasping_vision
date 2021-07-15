@@ -35,7 +35,7 @@ pcl::visualization::PCLVisualizer::Ptr simpleVis(void) {
 			new pcl::visualization::PCLVisualizer("3D Viewer"));
 
 	viewer->setBackgroundColor(255, 255, 255);
-	viewer->addCoordinateSystem(1.0);
+	viewer->addCoordinateSystem(10.0);
 	viewer->initCameraParameters();
 
 	viewer->setCameraPosition(0.0, 0.0, 0.0, 0.0, -1.0, 0.0);
@@ -59,12 +59,6 @@ class vis_bbox {
 		pc_sub = nh->subscribe<PointCloud>("/camera/depth/color/points", 1, &vis_bbox::pc_callback, this);
 		bbox_sub = nh->subscribe<std_msgs::Float32MultiArray>("/obb_array", 1, &vis_bbox::bbox_callback, this);
 
-
-		// message_filters::Subscriber<PointCloud> pc_sub(*nh, "/camera/depth/color/points", 1);
-		// message_filters::Subscriber<std_msgs::Float32MultiArray> bbox_sub(*nh, "/obb_array", 1);
-
-		// message_filters::TimeSynchronizer<PointCloud, std_msgs::Float32MultiArray> sync(pc_sub, bbox_sub, 10);
-
 		printf("plane segmentation node: Init completed!");
 	}
 
@@ -80,13 +74,70 @@ class vis_bbox {
 	}
 
 	void loop() {
-		if (!receive_pc_msg && !receive_bbox_msg) {
-			std::cout << "No data received" << std::endl;
+
+		// std::cout << "a" << std::endl;
+
+		viewer->spinOnce(50);
+		viewer->removeAllPointClouds();
+		viewer->removeAllShapes();
+
+		if (!receive_pc_msg || !receive_bbox_msg) {
+			// std::cout << "No data received" << std::endl;
 			return;
 		}
 
+		PointCloud::Ptr cur_cloud (new PointCloud);
+		pcl::copyPointCloud(stored_pc, *cur_cloud);
 
-		std::cout << bbox_array << std::endl;
+		std_msgs::Float32MultiArray cur_array;
+		cur_array = bbox_array;
+
+		pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cur_cloud);
+        viewer->addPointCloud<pcl::PointXYZRGB> (cur_cloud, rgb, "sample cloud");  
+
+		Eigen::Vector3f mass_center(cur_array.data[6], cur_array.data[7], cur_array.data[8]);
+		Eigen::Vector3f dims(cur_array.data[9], cur_array.data[10], cur_array.data[11]);
+		Eigen::Vector3f major_vector(cur_array.data[0], cur_array.data[1], cur_array.data[2]);
+		Eigen::Vector3f middle_vector(cur_array.data[3], cur_array.data[4], cur_array.data[5]);
+
+		Eigen::Vector3f minor_vector = major_vector.cross(middle_vector);
+
+		Eigen::Matrix3f rot_matrix;
+		rot_matrix.col(0) = major_vector;
+		rot_matrix.col(1) = middle_vector;
+		rot_matrix.col(2) = minor_vector;
+	
+	
+
+
+		pcl::PointXYZ o;
+		o.x = mass_center[0];
+		o.y = mass_center[1];
+		o.z = mass_center[2];
+		viewer->addSphere (o, 0.03, "sphere", 0);
+
+
+
+		Eigen::Quaternionf quat(rot_matrix);
+		// quat.FromTwoVectors(major_vector, middle_vector);
+
+		// std::cout << quat << std::endl;
+
+		int counter = 1;
+		pcl::PointXYZRGB center(mass_center(0), mass_center(1), mass_center(2));
+		pcl::PointXYZRGB x_axis(major_vector(0) + mass_center(0), major_vector(1) + mass_center(1), major_vector(2) + mass_center(2));
+		pcl::PointXYZRGB y_axis(middle_vector(0) + mass_center(0), middle_vector(1) + mass_center(1), middle_vector(2) + mass_center(2));
+		pcl::PointXYZRGB z_axis(minor_vector(0) + mass_center(0), minor_vector(1) + mass_center(1), minor_vector(2) + mass_center(2));
+		
+		viewer->addCube(mass_center, quat, dims(0), dims(1), dims(2), "OBB_" + std::to_string(counter));
+		viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, "OBB_" + std::to_string(counter));
+		
+		viewer->addLine(center, x_axis, 1.0f, 0.0f, 0.0f, "major eigen vector " + std::to_string(counter));//main ingredient
+		viewer->addLine(center, y_axis, 0.0f, 1.0f, 0.0f, "middle eigen vector " + std::to_string(counter));
+		viewer->addLine(center, z_axis, 0.0f, 0.0f, 1.0f, "minor eigen vector " + std::to_string(counter));
+
+
+		// std::cout << cur_cloud << std::endl;
 	}
 };
 

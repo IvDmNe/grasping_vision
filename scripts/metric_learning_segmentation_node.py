@@ -50,6 +50,10 @@ class ImageListener:
         self.depth = None
         rgb_frame_id = None
         rgb_frame_stamp = None
+
+        self.image_masked = None
+        self.depth_masked = None
+
         self.working_mode = 'inference'
         self.depth_encoding = None
         self.prev_training_mask_info = None
@@ -391,22 +395,31 @@ class ImageListener:
                 self.working_mode = 'inference'
                 classes, confs, dists = self.classifier.classify(features.squeeze())
 
+
                 if isinstance(classes, str):
                     classes = [classes]
-
                 if classes:
-                    if not (demand_class in classes):
+
+                    # threshold predictions
+                    class_idxs = [idx for idx, (cl, conf, dist) in enumerate(zip(classes, confs, dists)) if (conf > 0.8 and dist < 0.2)]
+                    high_propb_classes = [classes[i] for i in class_idxs]
+                    # rospy.logwarn(classes)
+
+
+
+
+                    if not (demand_class in high_propb_classes):
                         rospy.logwarn(
-                            f'object: {demand_class} not found among {classes}')
+                            f'object: {demand_class} not found among {high_propb_classes}')
                         return
 
-                    idx = classes.index(demand_class)
+                    idx = class_idxs[high_propb_classes.index(demand_class)]
                     mask = get_one_mask(
                         boxes.cpu().int().numpy(), pred_masks, image, idx).astype(np.uint8)
                     # apply masking
 
-                    image_masked = cv.bitwise_and(image, image, mask=mask)
-                    depth_masked = cv.bitwise_and(depth, depth, mask=mask)
+                    self.image_masked = cv.bitwise_and(image, image, mask=mask)
+                    self.depth_masked = cv.bitwise_and(depth, depth, mask=mask)
             elif self.working_mode.split(' ')[0] == 'remove':
                 # remove known class
 
@@ -422,12 +435,12 @@ class ImageListener:
                     1, f'invalid working mode: {self.working_mode}')
                 # return
         
-        self.send_images_to_topics(image_masked, depth_masked, image_segmented)
+        self.send_images_to_topics(self.image_masked, self.depth_masked, image_segmented)
 
 
         end = time.time()
         fps = 1 / (end - start)
-        rospy.logwarn(f'FPS: {fps:.2f}')
+        rospy.logwarn_throttle(1, f'FPS: {fps:.2f}')
 
     def check_sim(self, box):
         box_center = ((box[3] + box[1]) // 2, (box[2] + box[0]) // 2)
