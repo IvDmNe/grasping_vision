@@ -102,5 +102,5 @@ EXPOSE 11311
 
 RUN apt-get install ros-melodic-pcl-ros ros-melodic-image-pipeline -y
 
-
+RUN pip3 install albumentations
 

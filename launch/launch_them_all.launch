@@ -2,8 +2,8 @@
 <!--     <include file="$(find pc_proc)/launch/rs_aligned_depth.launch"/> -->
     <include file="$(find grasping_vision)/launch/rgbd_to_pc.launch"/>
     <node name="segmentation_node" type="metric_learning_segmentation_node.py" pkg="grasping_vision"/>
-    <node name="plane_segment" type="grasping_vision_plane_segment" pkg="grasping_vision"/>
-    <node name="get_obb" type="grasping_vision_get_obb" pkg="grasping_vision"/>
+    <node name="plane_segment" type="plane_segment" pkg="grasping_vision"/>
+    <node name="get_obb" type="get_obb" pkg="grasping_vision"/>
 
     <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find pc_proc)/rviz_config.rviz" /> -->
 

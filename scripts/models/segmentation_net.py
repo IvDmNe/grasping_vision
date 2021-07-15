@@ -7,8 +7,13 @@ from detectron2.structures import ImageList
 from detectron2.modeling import build_model
 from detectron2.structures import Instances
 from detectron2.checkpoint import DetectionCheckpointer
+from detectron2.export import TracingAdapter
+from detectron2.export.flatten import flatten_to_tuple
+
+
 
 import torch
+import torch.autograd.profiler as profiler
 # import cv2 as cv
 import numpy as np
 # from detectron2.layers.nms import batched_nms
@@ -22,7 +27,7 @@ import pwd
 from matplotlib import pyplot as plt
 
 import yaml
-
+import time
 
 class seg:
     def __init__(self):
@@ -33,18 +38,19 @@ class seg:
             "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
 
         # self.cfg.merge_from_file('model_config.yaml')
+        
 
 
-        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.00  # set threshold for this model
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.01  # set threshold for this model
         # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
         # self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(
         #     "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
 
         # username = pwd.getpwuid( os.getuid() )[ 0 ]
         
-        # new_dir = '/ws/src/grasping_vision/scripts'
+        new_dir = '/ws/src/grasping_vision/scripts'
         rospy.logwarn(f'current dir: {os.getcwd()}')
-        # os.chdir(new_dir)
+        os.chdir(new_dir)
         rospy.logwarn(f'No model weights found in {os.getcwd()}, downloading...')
         if not Path('model_final_f10217.pkl').is_file():
             os.system('wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl')
@@ -60,6 +66,10 @@ class seg:
         checkpointer = DetectionCheckpointer(self.model)
         checkpointer.load(self.cfg.MODEL.WEIGHTS)
 
+        self.deployed_backbone = None
+        self.deployed_RPN = None
+        self.adapter = None
+
         
         
         
@@ -68,47 +78,94 @@ class seg:
 
 
     def forward(self, image):
-        with torch.no_grad():
 
-            t_image = ImageList.from_tensors(
-                [torch.Tensor(image).permute(2, 0, 1)])
+        t_image = ImageList.from_tensors(
+            [torch.Tensor(image).permute(2, 0, 1)])
 
+        if self.deployed_backbone == None:
+            self.deployed_backbone = torch.jit.trace(self.model.backbone, t_image.tensor.cuda(), strict=False)
+            # self.deployed_backbone.half()
+            # self.model.proposal_generator.half()
+            # self.model.roi_heads.half()
+            # print(self.deployed_backbone.code)
+            # exit()
 
+        
 
-            features = self.model.backbone(
-                t_image.tensor.cuda())
+        t_image_cuda = t_image.tensor.cuda()
 
-            proposals, _ = self.model.proposal_generator(
-                t_image, features)
+        features = self.deployed_backbone(
+            t_image_cuda)
 
+        start_0 = time.time()
+        # if self.deployed_RPN == None:
+        #     self.adapter = TracingAdapter(self.model.proposal_generator, [t_image, features])
+        #     self.deployed_RPN = torch.jit.trace(self.adapter, self.adapter.flattened_inputs, strict=False)
 
-            min_idx = -1
-            ids = []
-            for idx, (box, score) in enumerate(zip(proposals[0].proposal_boxes[:20], torch.sigmoid(proposals[0].objectness_logits[:20]))):
-
-                if score < 0.95:
-                    break
-
-                pts = box.detach().cpu().long()
-
-                # if area is too big or if confidence is less than threshold
-                if ((pts[2] - pts[0]) * (pts[3] - pts[1]) / (image.shape[0]*image.shape[1]) > 0.3):
-                    continue
-
-                ids.append(idx)
-            inds_after_nms = nms(
-                proposals[0].proposal_boxes[ids].tensor.cpu(), proposals[0].objectness_logits[ids].cpu(), 0.2)
+        # flattened_outputs = self.deployed_RPN(*(flatten_to_tuple([t_image, features])[0]))
+        # # adapter knows the schema to convert it back (new_outputs == outputs)
+        # proposals,_ = self.adapter.outputs_schema(flattened_outputs)
 
 
-            new_prop = proposals[0][ids][inds_after_nms]
+        proposals, _ = self.model.proposal_generator(
+            t_image, features)
 
-            instances, _ = self.model.roi_heads(
-                t_image, features, [new_prop])
+    
+        min_idx = -1
+        ids = []
+        for idx, (box, score) in enumerate(zip(proposals[0].proposal_boxes, torch.sigmoid(proposals[0].objectness_logits))):
 
-            
-            insts_inds_after_nms = nms(
-                instances[0].pred_boxes.tensor, instances[0].scores, 0.4)
+            if score < 0.95:
+                break
 
-            return instances[0][insts_inds_after_nms]
+            pts = box.detach().cpu().long()
+
+            # if area is too big or if confidence is less than threshold
+            if ((pts[2] - pts[0]) * (pts[3] - pts[1]) / (image.shape[0]*image.shape[1]) > 0.3):
+                continue
+
+            ids.append(idx)
+
+        # print(proposals[0].proposal_boxes[ids].tensor.cpu().dtype, proposals[0].objectness_logits[ids].cpu().dtype)
+        inds_after_nms = nms(
+            proposals[0].proposal_boxes[ids].tensor.cpu(), proposals[0].objectness_logits[ids].cpu(), 0.2)
 
 
+        new_prop = proposals[0][ids][inds_after_nms]
+
+        # print(len(new_prop))
+
+        instances, _ = self.model.roi_heads(
+            t_image, features, [new_prop])
+
+        
+
+        insts_inds_after_nms = nms(
+            instances[0].pred_boxes.tensor, instances[0].scores, 0.4)
+
+        # print(time.time() - start_0, 1 / (time.time() - start_0))
+        return instances[0][insts_inds_after_nms]
+
+
+if __name__ == '__main__':
+    
+    # serialize model parts
+
+    net = seg()
+
+    # traced_backbone = net.model.backbone
+
+    image = torch.ones([480, 640, 3])
+    t_image = ImageList.from_tensors(
+            [image.permute(2, 0, 1)])
+
+    # deployed_backbone = torch.jit.trace(net.model.backbone, t_image.tensor.cuda(), strict=False)
+
+    # net.forward(image)
+    feats = net.model.backbone(t_image.tensor.cuda())
+    # torch.save(deployed_backbone, 'traced_backbone.pth')
+
+    # features = deployed_backbone(t_image.tensor.cuda())
+
+    # adapter = TracingAdapter(net.model.proposal_generator, [t_image, features])
+    # deployed_RPN = torch.jit.trace(adapter, adapter.flattened_inputs, strict=False)

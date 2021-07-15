@@ -293,7 +293,7 @@ dictitems:
           NUM_CLASSES: 80
           POSITIVE_FRACTION: 0.25
           PROPOSAL_APPEND_GT: true
-          SCORE_THRESH_TEST: 0.0
+          SCORE_THRESH_TEST: 0.01
         state:
           __deprecated_keys__: !!set {}
           __immutable__: false

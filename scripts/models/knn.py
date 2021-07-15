@@ -58,6 +58,19 @@ class knn_torch:
 
         # self.outlier_estimator.fit(self.x_data.cpu())
 
+
+    def remove_class(self, cl):
+        inds_to_keep = [idx for idx, el in enumerate(self.y_data) if el != cl]
+
+        self.x_data = self.x_data[inds_to_keep]
+        self.y_data = [self.y_data[i] for i in inds_to_keep]
+
+        self.classes = list(set(self.y_data))
+
+        torch.save({'x': self.x_data.detach().cpu(),
+                    'y': self.y_data}, self.save_file)
+
+
     def classify(self, x):
 
         if self.x_data is None:

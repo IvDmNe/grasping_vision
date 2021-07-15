@@ -154,9 +154,11 @@ class ImageListener:
 
         if len(instances.pred_boxes.tensor) == 0:
             rospy.logerr_throttle(2, 'no objects found')
-            return
+            return 
 
         final_masks = []
+
+        # print(instances.pred_masks.shape)
 
         for box, mask in zip(instances.pred_boxes, instances.pred_masks):
             # get masked images
@@ -247,8 +249,8 @@ class ImageListener:
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
 
-        image = cv.resize(image, (640 // 2, 480 // 2))
-        depth = cv.resize(depth, (640 // 2, 480 // 2))
+        # image = cv.resize(image, (640 // 2, 480 // 2))
+        # depth = cv.resize(depth, (640 // 2, 480 // 2))
 
         # image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 
@@ -257,21 +259,58 @@ class ImageListener:
         ret_seg = self.do_segmentation(image)
         if ret_seg:
             images_masked, boxes, pred_masks = ret_seg
-        else:
-            return
+        # else:
+        #     return
 
-        # filter depth by 1 meter
-        depth[depth > 1.0] = 1.0
+            # filter depth by 1 meter
+            depth[depth > 1.0] = 1.0
 
-        if self.classifier.y_data is None:
-            # draw contours of found objects
-            for box, m in zip(boxes, pred_masks):
-                c = self.colors[0].astype(np.uint8).tolist()
+            if self.classifier.y_data is None:
+                # draw contours of found objects
+                for box, m in zip(boxes, pred_masks):
+                    c = self.colors[0].astype(np.uint8).tolist()
+
+                    # draw bounding box
+                    pts = box.detach().cpu().long()
+                    cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                                (int(pts[2]), int(pts[3])), c, 2)
+
+                    # draw object masks
+                    x1, y1, x2, y2 = box.round().long()
+                    sz = (int(x2 - x1), int(y2 - y1))
+
+                    mask_rs = cv.resize(
+                        m.squeeze().detach().cpu().numpy(), sz)
+
+                    cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+                    cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+                    cntrs, _ = cv.findContours(
+                        cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+                    cv.drawContours(image_segmented, cntrs, -
+                                    1, c, 2)
+
+            # choose action according to working mode
+            if self.working_mode.split(' ')[0] == 'train':
+                # choose only the nearest bbox to the center
+                cl = self.working_mode.split(
+                    ' ')[1]
+
+
+                
+
+
+                center_idx = self.save_data(images_masked, image.shape, boxes)
+
+                box = boxes[center_idx]
+                m = pred_masks[center_idx]
+
+                c = (255, 0, 0)
 
                 # draw bounding box
                 pts = box.detach().cpu().long()
                 cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                            (int(pts[2]), int(pts[3])), c, 2)
+                                (int(pts[2]), int(pts[3])), c, 2)
 
                 # draw object masks
                 x1, y1, x2, y2 = box.round().long()
@@ -287,129 +326,101 @@ class ImageListener:
 
                 cv.drawContours(image_segmented, cntrs, -
                                 1, c, 2)
-
-        # choose action according to working mode
-        if self.working_mode.split(' ')[0] == 'train':
-            # choose only the nearest bbox to the center
-            cl = self.working_mode.split(
-                ' ')[1]
+                mask = cur_mask
 
 
-            
+            elif self.working_mode == 'inference':
+                if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
+                    self.feed_features_to_classifier()
 
+                features = self.embedder(images_masked)
+                ret = self.classifier.classify(features)
+                
+                if ret:
+                    classes, confs, min_dists = ret
 
-            center_idx = self.save_data(images_masked, image.shape, boxes)
+                    if isinstance(classes, str):
+                        classes = [classes]
+                    if classes:
+                        # draw labels and masks
+                        for cl, conf, min_dist, box, m in zip(classes, confs, min_dists, boxes, pred_masks):
+                            idx = self.classifier.classes.index(cl)
+                            c = self.colors[idx].astype(np.uint8).tolist()
 
-            box = boxes[center_idx]
-            m = pred_masks[center_idx]
+                            # if confidence is less than the threshold, PAINT IT BLACK
+                            if min_dist > 0.2 or conf < 0.8:
+                                # continue 
+                                c = (0, 0, 0)
 
-            c = (255, 0, 0)
+                            # draw object masks
+                            x1, y1, x2, y2 = box.round().long()
+                            sz = (int(x2 - x1), int(y2 - y1))
 
-            # draw bounding box
-            pts = box.detach().cpu().long()
-            cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                            (int(pts[2]), int(pts[3])), c, 2)
+                            mask_rs = cv.resize(
+                                m.squeeze().detach().cpu().numpy(), sz)
 
-            # draw object masks
-            x1, y1, x2, y2 = box.round().long()
-            sz = (int(x2 - x1), int(y2 - y1))
+                            cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+                            cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+                            cntrs, _ = cv.findContours(
+                                cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
-            mask_rs = cv.resize(
-                m.squeeze().detach().cpu().numpy(), sz)
+                            cv.drawContours(image_segmented, cntrs, -
+                                            1, c, 2)
+                            # if confidence is less than the threshold, don't draw label and confidence
+                            if min_dist > 0.2 or conf < 0.8:
+                                continue               
+                            # draw bounding box
+                            pts = box.detach().cpu().long()
+                            cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                                        (int(pts[2]), int(pts[3])), c, 2)
 
-            cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
-            cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
-            cntrs, _ = cv.findContours(
-                cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+                            # draw label
+                            pt = (box[:2].round().long()) - 2
+                            pt = (int(pt[0]), int(pt[1]))
+                            cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
+                                    cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
-            cv.drawContours(image_segmented, cntrs, -
-                            1, c, 2)
-            mask = cur_mask
+                        mask = get_one_mask(
+                            boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
+                        # print(mask)
 
-
-        elif self.working_mode == 'inference':
-            if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
-                self.feed_features_to_classifier()
-
-            features = self.embedder(images_masked)
-            ret = self.classifier.classify(features)
-            
-            if ret:
-                classes, confs, min_dists = ret
+            elif self.working_mode.split(' ')[0] == 'give':
+                features = self.embedder(images_masked)
+                demand_class = self.working_mode.split(' ')[1]
+                rospy.logwarn(f'Command: {self.working_mode}')
+                self.working_mode = 'inference'
+                classes, confs, dists = self.classifier.classify(features.squeeze())
 
                 if isinstance(classes, str):
                     classes = [classes]
+
                 if classes:
-                    # draw labels and masks
-                    for cl, conf, min_dist, box, m in zip(classes, confs, min_dists, boxes, pred_masks):
-                        idx = self.classifier.classes.index(cl)
-                        c = self.colors[idx].astype(np.uint8).tolist()
+                    if not (demand_class in classes):
+                        rospy.logwarn(
+                            f'object: {demand_class} not found among {classes}')
+                        return
 
-                        # if confidence is less than the threshold, PAINT IT BLACK
-                        if min_dist > 0.2 or conf < 0.8:
-                            # continue 
-                            c = (0, 0, 0)
-
-                        # draw object masks
-                        x1, y1, x2, y2 = box.round().long()
-                        sz = (int(x2 - x1), int(y2 - y1))
-
-                        mask_rs = cv.resize(
-                            m.squeeze().detach().cpu().numpy(), sz)
-
-                        cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
-                        cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
-                        cntrs, _ = cv.findContours(
-                            cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
-
-                        cv.drawContours(image_segmented, cntrs, -
-                                        1, c, 2)
-                        # if confidence is less than the threshold, don't draw label and confidence
-                        if min_dist > 0.2 or conf < 0.8:
-                            continue               
-                        # draw bounding box
-                        pts = box.detach().cpu().long()
-                        cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                                    (int(pts[2]), int(pts[3])), c, 2)
-
-                        # draw label
-                        pt = (box[:2].round().long()) - 2
-                        pt = (int(pt[0]), int(pt[1]))
-                        cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
-                                cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
-
+                    idx = classes.index(demand_class)
                     mask = get_one_mask(
-                        boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
-                    # print(mask)
+                        boxes.cpu().int().numpy(), pred_masks, image, idx).astype(np.uint8)
+                    # apply masking
 
-        elif self.working_mode.split(' ')[0] == 'give':
-            features = self.embedder(images_masked)
-            demand_class = self.working_mode.split(' ')[1]
-            rospy.logwarn(f'Command: {self.working_mode}')
-            self.working_mode = 'inference'
-            classes, confs, dists = self.classifier.classify(features.squeeze())
+                    image_masked = cv.bitwise_and(image, image, mask=mask)
+                    depth_masked = cv.bitwise_and(depth, depth, mask=mask)
+            elif self.working_mode.split(' ')[0] == 'remove':
+                # remove known class
 
-            if isinstance(classes, str):
-                classes = [classes]
+                self.classifier.remove_class(self.working_mode.split(' ')[1])
+                
 
-            if classes:
-                if not (demand_class in classes):
-                    rospy.logwarn(
-                        f'object: {demand_class} not found among {classes}')
-                    return
+                rospy.logwarn(f'Class "{self.working_mode.split(" ")[1]}" removed')
+                self.working_mode = 'inference'
+                
 
-                idx = classes.index(demand_class)
-                mask = get_one_mask(
-                    boxes.cpu().int().numpy(), pred_masks, image, idx).astype(np.uint8)
-                # apply masking
-
-                image_masked = cv.bitwise_and(image, image, mask=mask)
-                depth_masked = cv.bitwise_and(depth, depth, mask=mask)
-
-        else:
-            rospy.logerr_throttle(
-                1, f'invalid working mode: {self.working_mode}')
-            return
+            else:
+                rospy.logerr_throttle(
+                    1, f'invalid working mode: {self.working_mode}')
+                # return
         
         self.send_images_to_topics(image_masked, depth_masked, image_segmented)
 
@@ -425,7 +436,7 @@ class ImageListener:
             self.prev_training_mask_info = box_center
             return True
         # print(euclidean(box_center, self.prev_training_mask_info))
-        if euclidean(box_center, self.prev_training_mask_info) > 80:
+        if euclidean(box_center, self.prev_training_mask_info) > 50:
             rospy.logwarn(
                 f"skipping image, too far from previous: {euclidean(box_center, self.prev_training_mask_info):.2f} (threshold: {80})")
             # print(euclidean(box_center, self.prev_training_mask_info))
@@ -444,7 +455,7 @@ class ImageListener:
             self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
                 1]] * self.x_data_to_save.shape[0])
         else:
-            rospy.logwarn('No features were saved')
+            rospy.logwarn_throttle(5,'No features were saved')
 
         self.x_data_to_save = None
         self.prev_mode = 'inference'
@@ -456,7 +467,12 @@ if __name__ == '__main__':
     rate = rospy.Rate(freq)
     try:
         while not rospy.is_shutdown():
+
+            # with profiler.profile(with_stack=True, profile_memory=True) as prof:
             listener.run_proc()
+
+            # print(prof.key_averages(group_by_stack_n=5).table(sort_by='self_cpu_time_total', row_limit=10))
+            # exit()
             rate.sleep()
     finally:
         cv.destroyAllWindows()

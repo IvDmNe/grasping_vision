@@ -143,8 +143,9 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME} src/node_class.cpp)
-add_executable(${PROJECT_NAME}_get_obb src/get_obb.cpp)
-add_executable(${PROJECT_NAME}_plane_segment src/plane_segment.cpp)
+add_executable(get_obb src/get_obb.cpp)
+add_executable(plane_segment src/plane_segment.cpp)
+add_executable(visualize_obb src/visualize_obb.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -157,17 +158,25 @@ add_executable(${PROJECT_NAME}_plane_segment src/plane_segment.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}_get_obb
+target_link_libraries(get_obb
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${EIGEN_LIBRARIES}
-  ${OpenCV_LIBS}
+  # ${OpenCV_LIBS}
 )
-target_link_libraries(${PROJECT_NAME}_plane_segment
+
+target_link_libraries(plane_segment
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${EIGEN_LIBRARIES}
-  ${OpenCV_LIBS}
+  # ${OpenCV_LIBS}
+)
+
+target_link_libraries(visualize_obb
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${EIGEN_LIBRARIES}
+  # ${OpenCV_LIBS}
 )
 
 #############
