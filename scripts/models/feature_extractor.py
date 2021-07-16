@@ -7,6 +7,9 @@ import torchvision
 # from pytorch_metric_learning.utils import common_functions
 from matplotlib import pyplot as plt
 import cv2 as cv
+import numpy as np
+
+
 class feature_extractor(nn.Module):
 
     def __init__(self, backbone):
@@ -82,3 +85,43 @@ class image_embedder(nn.Module):
 
     # def load_from_file(self, filename):
     #     self.backbone, self.embedder = torch.load(filename)
+
+def color_normalize(x, mean=[0.485, 0.456, 0.406], std=[0.228, 0.224, 0.225]):
+    for t, m, s in zip(x, mean, std):
+        t.sub_(m)
+        t.div_(s)
+    return x
+class dino_wrapper(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+
+        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.model = torch.hub.load('facebookresearch/dino:main', 'dino_vits16')
+        self.model.to(self.device)
+
+        self.transforms = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Resize(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+
+
+
+    def forward(self, x):
+
+        if isinstance(x, list):
+            x = torch.stack([self.transforms(i) for i in x])
+        else:
+            x = self.transforms(x)
+
+        x = x.to(self.device)
+
+        # print(x.shape)
+
+        res = self.model(x)
+
+        return res
+
+       

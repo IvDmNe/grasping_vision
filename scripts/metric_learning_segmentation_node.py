@@ -3,11 +3,12 @@
 
 # this project packages
 from torchvision.transforms.functional import perspective
-from models.segmentation_net import *
-from models.feature_extractor import image_embedder
+from models.segmentation_net import seg
+from models.feature_extractor import dino_wrapper, image_embedder
 from models.mlp import MLP
-from models.knn import *
-from utils.utils import *
+from models.knn import knn_torch
+from utilities.utils import find_nearest, find_nearest_to_center_cntr, get_centers, \
+                        get_one_mask, get_nearest_to_center_box, get_padded_image,removeOutliers
 
 # ROS
 import rospy
@@ -21,7 +22,7 @@ import torch
 from torch.nn import functional as F
 
 # Detectron 2
-from detectron2.utils.logger import setup_logger
+# from detectron2.utils.logger import setup_logger
 from detectron2.utils.colormap import colormap
 
 # misc
@@ -35,11 +36,13 @@ from albumentations.pytorch import ToTensorV2
 
 torch.set_grad_enabled(False)
 
-setup_logger()
+# setup_logger()
 
 
 lock = threading.Lock()
 freq = 100
+conf_thresh = 0.8
+min_dist_thresh = 0.2
 
 
 class ImageListener:
@@ -86,23 +89,20 @@ class ImageListener:
 
         emb_size = 64
 
-        # folder = f'/home/iiwa/Nenakhov/metric_learning/example_saved_models/mobilenetv3_small_{emb_size}_100cl'
-        # fs = os.listdir(folder)
-
-        # r = re.compile("embedder_best")
-        # emb_file = folder + '/' + list(filter(r.match, fs))[0]
-
-        # r = re.compile("trunk_best")
-        # trunk_file = folder + '/' + list(filter(r.match, fs))[0]
 
         emb_file = 'models/embedder_best1.pth'
         trunk_file = 'models/trunk_best1.pth'
 
 
         self.embedder = image_embedder(trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
+
         self.classifier = knn_torch(
             datafile='datafiles/14_07_data_aug5.pth', knn_size=20)
-            # datafile='knn_data_metric_learning.pth')
+
+        # self.embedder = dino_wrapper()
+        # self.classifier = knn_torch(
+        #     datafile='datafiles/test_data_own_dino.pth', knn_size=20)
+
 
         ts = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], 1, 0.1)
@@ -352,7 +352,7 @@ class ImageListener:
                             c = self.colors[idx].astype(np.uint8).tolist()
 
                             # if confidence is less than the threshold, PAINT IT BLACK
-                            if min_dist > 0.2 or conf < 0.8:
+                            if min_dist > min_dist_thresh or conf < conf_thresh:
                                 # continue 
                                 c = (0, 0, 0)
 
@@ -371,7 +371,7 @@ class ImageListener:
                             cv.drawContours(image_segmented, cntrs, -
                                             1, c, 2)
                             # if confidence is less than the threshold, don't draw label and confidence
-                            if min_dist > 0.2 or conf < 0.8:
+                            if min_dist > min_dist_thresh or conf < conf_thresh:
                                 continue               
                             # draw bounding box
                             pts = box.detach().cpu().long()
