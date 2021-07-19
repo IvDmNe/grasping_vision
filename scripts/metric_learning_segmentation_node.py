@@ -33,6 +33,8 @@ import numpy as np
 import re
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+from scipy.spatial.distance import euclidean
+
 
 torch.set_grad_enabled(False)
 
@@ -353,7 +355,7 @@ class ImageListener:
 
                             # if confidence is less than the threshold, PAINT IT BLACK
                             if min_dist > min_dist_thresh or conf < conf_thresh:
-                                # continue 
+                                continue 
                                 c = (0, 0, 0)
 
                             # draw object masks

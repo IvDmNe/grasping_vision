@@ -107,6 +107,7 @@ class vis_bbox {
 		rot_matrix.col(1) = middle_vector;
 		rot_matrix.col(2) = minor_vector;
 	
+		Eigen::Quaternionf quat(rot_matrix);
 	
 
 
@@ -118,7 +119,6 @@ class vis_bbox {
 
 
 
-		Eigen::Quaternionf quat(rot_matrix);
 		// quat.FromTwoVectors(major_vector, middle_vector);
 
 		// std::cout << quat << std::endl;
