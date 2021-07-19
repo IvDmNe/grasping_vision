@@ -37,7 +37,7 @@ Prepare ros project and build it:
 ```
 cd ws
 catkin_make
-source devel/setup.bash
+source devel/setup.bash --extend
 ```
 Launch node for segmentation and bouding box calculating:
 ```
