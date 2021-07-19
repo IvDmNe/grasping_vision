@@ -26,6 +26,7 @@ Install nvidia-container-toolkit to use GPU in docker: https://docs.nvidia.com/d
 # Run
 Run realsense with ROS:
 ```roslaunch launch rs_aligned_depth.launch```
+
 (Opionally) Open rviz: ```rviz -d rviz_config.rviz```
 
 
@@ -37,7 +38,7 @@ Prepare ros project and build it:
 ```
 cd ws
 catkin_make
-source devel/setup.bash
+source devel/setup.bash --extend
 ```
 Launch node for segmentation and bouding box calculating:
 ```
