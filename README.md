@@ -26,6 +26,7 @@ Install nvidia-container-toolkit to use GPU in docker: https://docs.nvidia.com/d
 # Run
 Run realsense with ROS:
 ```roslaunch launch rs_aligned_depth.launch```
+
 (Opionally) Open rviz: ```rviz -d rviz_config.rviz```
 
 
