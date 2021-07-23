@@ -18,6 +18,8 @@ cd grasping_vision
 Change line 7 in ```run_docker.sh``` according to your workspace location:
 ```    -v your_path_to_workspace:/ws \```
 
+If you run Realsense in Gazebo, then change topic in file ```scripts/metric_learning_segmentation_node.py``` at line 84 from ```aligned_depth_to_color''' to ```depth``` 
+
 Build docker image
 
 ```sh build_docker.sh```
