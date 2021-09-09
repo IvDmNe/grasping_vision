@@ -73,7 +73,7 @@ RUN apt-get install libpcl-dev -y
 RUN apt-get update && apt-get install -y python-catkin-tools python-dev libopencv-dev
 RUN mkdir -p /cv_bridge_ws/src && \
     cd /cv_bridge_ws/src && \
-    git clone https://github.com/kirillin/vision_opencv.git && \
+    git clone https://github.com/IvDmNe/vision_opencv.git && \
     cd /cv_bridge_ws && \
     catkin config \
         -DPYTHON_EXECUTABLE=/usr/bin/python3 \
