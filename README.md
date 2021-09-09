@@ -18,12 +18,14 @@ cd grasping_vision
 Change line 7 in ```run_docker.sh``` according to your workspace location:
 ```    -v your_path_to_workspace:/ws \```
 
-If you run Realsense in Gazebo, then change topic in file ```scripts/metric_learning_segmentation_node.py``` at line 84 from ```aligned_depth_to_colo``` to ```depth``` 
+If you run Realsense in Gazebo, then change topic in file ```scripts/metric_learning_segmentation_node.py``` at line 84 from ```aligned_depth_to_color``` to ```depth``` 
+
+Install nvidia-container-toolkit to use GPU in docker: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
 
 Build docker image
 
 ```sh build_docker.sh```
-Install nvidia-container-toolkit to use GPU in docker: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
+
 
 # Run
 Run realsense with ROS:
@@ -69,3 +71,9 @@ In the command_node user can enter one of the following commands:
 3. In give mode the image is segmented and the coordinates of bouding box of a desired object are sent once to a topic ```/obb_array```. Once the "give" command was sent, the arraay is sent continously in topic until new "give" command is sent. 
 
 The topic ```/obb_array``` has float32 one-dimensional array representing a pose of the bounding box in the followong format: [major_vector, middle_vector, mass_center, dimensions] (in total 12 elements). Major vector represents X-axis, middle vector - Y-axis, dimensions - size of bounding box in a coordinate system, which axes are the major vector, middle vector and a vector maden by a cross product of two first ones. 
+
+In a base setup the algorithm is able to recognize 5 objects: cup, cleaner, mouse, regbi ball, rubik's cube and a realsense's box.
+
+Examples of detection:
+![image alt](https://github.com/IvDmNe/grasping_vision/blob/main/segmentations_ress.png)
+
