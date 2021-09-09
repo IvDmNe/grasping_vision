@@ -74,5 +74,5 @@ The topic ```/obb_array``` has float32 one-dimensional array representing a pose
 
 In a base setup the algorithm is able to recognize 5 objects: cup, cleaner, mouse, rubik's cube and a realsense's box.
 
-![image alt](https://github.com/ivdmne/grasping_vision/segmentations_ress.png)
+![image alt](https://github.com/IvDmNe/grasping_vision/blob/main/segmentations_ress.png)
 
