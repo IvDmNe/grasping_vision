@@ -72,7 +72,8 @@ In the command_node user can enter one of the following commands:
 
 The topic ```/obb_array``` has float32 one-dimensional array representing a pose of the bounding box in the followong format: [major_vector, middle_vector, mass_center, dimensions] (in total 12 elements). Major vector represents X-axis, middle vector - Y-axis, dimensions - size of bounding box in a coordinate system, which axes are the major vector, middle vector and a vector maden by a cross product of two first ones. 
 
-In a base setup the algorithm is able to recognize 5 objects: cup, cleaner, mouse, rubik's cube and a realsense's box.
+In a base setup the algorithm is able to recognize 5 objects: cup, cleaner, mouse, regbi ball, rubik's cube and a realsense's box.
 
+Examples of detection:
 ![image alt](https://github.com/IvDmNe/grasping_vision/blob/main/segmentations_ress.png)
 
