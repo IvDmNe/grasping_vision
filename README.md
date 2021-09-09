@@ -20,10 +20,12 @@ Change line 7 in ```run_docker.sh``` according to your workspace location:
 
 If you run Realsense in Gazebo, then change topic in file ```scripts/metric_learning_segmentation_node.py``` at line 84 from ```aligned_depth_to_color``` to ```depth``` 
 
+Install nvidia-container-toolkit to use GPU in docker: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
+
 Build docker image
 
 ```sh build_docker.sh```
-Install nvidia-container-toolkit to use GPU in docker: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker
+
 
 # Run
 Run realsense with ROS:
