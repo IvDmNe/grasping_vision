@@ -71,3 +71,8 @@ In the command_node user can enter one of the following commands:
 3. In give mode the image is segmented and the coordinates of bouding box of a desired object are sent once to a topic ```/obb_array```. Once the "give" command was sent, the arraay is sent continously in topic until new "give" command is sent. 
 
 The topic ```/obb_array``` has float32 one-dimensional array representing a pose of the bounding box in the followong format: [major_vector, middle_vector, mass_center, dimensions] (in total 12 elements). Major vector represents X-axis, middle vector - Y-axis, dimensions - size of bounding box in a coordinate system, which axes are the major vector, middle vector and a vector maden by a cross product of two first ones. 
+
+In a base setup the algorithm is able to recognize 5 objects: cup, cleaner, mouse, rubik's cube and a realsense's box.
+
+![image alt](https://github.com/ivdmne/grasping_vision/segmentations_ress.png)
+
