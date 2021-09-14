@@ -35,7 +35,6 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from scipy.spatial.distance import euclidean
 
-
 torch.set_grad_enabled(False)
 
 # setup_logger()
@@ -224,8 +223,6 @@ class ImageListener:
 
         # check if bounding box is very different from previous
 
-
-
         if self.check_sim(boxes[center_idx].cpu().numpy()):
             if self.x_data_to_save is None:
                 self.x_data_to_save = features.squeeze()
@@ -355,7 +352,7 @@ class ImageListener:
 
                             # if confidence is less than the threshold, PAINT IT BLACK
                             if min_dist > min_dist_thresh or conf < conf_thresh:
-                                continue 
+                                # continue 
                                 c = (0, 0, 0)
 
                             # draw object masks
@@ -373,8 +370,8 @@ class ImageListener:
                             cv.drawContours(image_segmented, cntrs, -
                                             1, c, 2)
                             # if confidence is less than the threshold, don't draw label and confidence
-                            if min_dist > min_dist_thresh or conf < conf_thresh:
-                                continue               
+                            # if min_dist > min_dist_thresh or conf < conf_thresh:
+                            #     continue               
                             # draw bounding box
                             pts = box.detach().cpu().long()
                             cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),

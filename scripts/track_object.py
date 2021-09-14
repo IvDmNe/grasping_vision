@@ -29,6 +29,9 @@ import cv2 as cv
 import time
 import numpy as np
 
+from utilities.sort import *
+
+
 torch.set_grad_enabled
 
 setup_logger()
@@ -91,7 +94,7 @@ class ImageListener:
         self.start_time = time.time()
 
         # self.tracker = cv.legacy.
-        self.tacker = cv.Trac
+        self.tacker = Sort()
 
         rospy.loginfo('Segmentaion node: Init complete')
 
@@ -210,6 +213,10 @@ class ImageListener:
         # box = boxes[center_idx]
         # m = pred_masks[center_idx]
 
+        dets = boxes.round().long().numpy()
+        print(dets.shape)
+        self.tracker.update([])
+
         for ix, (box, m) in enumerate(zip(boxes, pred_masks)):
 
             c = (255, 0, 0) if ix == cent_idx else (0, 0, 255)
@@ -243,25 +250,27 @@ class ImageListener:
         # image_masked = cv.bitwise_and(image, image, mask=mask)
         
         # cv.imshow('mask', images_masked)
+
+
         cv.imshow('segmented', image_segmented)
         cv.waitKey(1)
 
-        cl = 'box'
-        root_folder = 'noisy_masks'
-        if not os.path.exists(root_folder):
-            os.mkdir(root_folder)
-        if not os.path.exists(f'{root_folder}/{cl}'):
-            os.mkdir(f'{root_folder}/{cl}')
+        # cl = 'box'
+        # root_folder = 'noisy_masks'
+        # if not os.path.exists(root_folder):
+        #     os.mkdir(root_folder)
+        # if not os.path.exists(f'{root_folder}/{cl}'):
+        #     os.mkdir(f'{root_folder}/{cl}')
 
-        dur = time.time() - self.start_time
-        cv.imwrite(f'{root_folder}/{cl}/{cl}_{dur:.3f}.png', images_masked)
+        # dur = time.time() - self.start_time
+        # cv.imwrite(f'{root_folder}/{cl}/{cl}_{dur:.3f}.png', images_masked)
 
-        print(f'{root_folder}/{cl}/{cl}_{dur:.3f}.png')
+        # print(f'{root_folder}/{cl}/{cl}_{dur:.3f}.png')
 
 
 
-        if dur > 30.0:
-            exit()
+        # if dur > 30.0:
+        #     exit()
 
         end = time.time()
         fps = 1 / (end - start)

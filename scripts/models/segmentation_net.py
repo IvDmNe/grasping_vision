@@ -66,7 +66,7 @@ class seg:
         checkpointer = DetectionCheckpointer(self.model)
         checkpointer.load(self.cfg.MODEL.WEIGHTS)
 
-        self.deployed_backbone = None
+        self.deployed_backbone = self.model.backbone
         self.deployed_RPN = None
         self.adapter = None
 
@@ -110,7 +110,6 @@ class seg:
         proposals, _ = self.model.proposal_generator(
             t_image, features)
 
-    
         min_idx = -1
         ids = []
         for idx, (box, score) in enumerate(zip(proposals[0].proposal_boxes, torch.sigmoid(proposals[0].objectness_logits))):

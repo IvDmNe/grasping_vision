@@ -20,8 +20,10 @@ def removeOutliers(x, outlierConstant):
 if __name__ == '__main__':
 
     # datafile = 'knn_data_metric_learning.pth'
-    datafile = 'datafiles/13_07_data_aug5.pth'
+    # datafile = 'datafiles/14_07_data_aug5.pth'
+    datafile = 'datafiles/test_data_own_dino.pth'
     data = torch.load(datafile)
+    data['x'] = data['x'].cpu()
     time_start = time.time()
     # tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
     
@@ -29,6 +31,18 @@ if __name__ == '__main__':
 
 
     print(data['x'].shape, len(data['y']))
+
+    # get only one class of object
+    # cl = 'mouse'
+    # inds = [i for i in range(len(data['y'])) if data['y'][i] == cl]
+
+    # # print(inds)
+
+    # data['x'] = data['x'][inds]
+    # data['y'] = [data['y'][i] for i in inds]
+    # # data['y'] = data['y'][inds]
+
+    # print(data['x'].shape, len(data['y']))
 
     results = umap.fit_transform(data['x'].squeeze())
     # tsne_results = tsne.fit_transform(data['x'].squeeze())

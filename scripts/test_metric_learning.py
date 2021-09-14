@@ -2,10 +2,10 @@
 
 # this project packages
 from models.segmentation_net import *
-from models.feature_extractor import image_embedder
+from models.feature_extractor import image_embedder, dino_wrapper
 from models.mlp import MLP
 from models.knn import *
-from utils.utils import *
+from utilities.utils import *
 
 # ROS
 import rospy
@@ -108,11 +108,11 @@ def visualize_embeddings(data, emb_sz, postfix=None, arch=None):
     umap = UMAP()
 
 
-    # print(data['x'].shape, len(data['y']))
+    print(data['x'].shape, len(data['y']))
 
     results = umap.fit_transform(data['x'].squeeze().cpu())
 
-    # print('visualization done! Time elapsed: {} seconds'.format(time.time()-time_start))
+    print('visualization done! Time elapsed: {} seconds'.format(time.time()-time_start))
 
 
     labels = data['y']
@@ -128,16 +128,18 @@ def visualize_embeddings(data, emb_sz, postfix=None, arch=None):
         # alpha=0.3
     )
     ax.set_title(f'visuals/vis_results_{emb_sz}{postfix}_{arch}')
-    plt.savefig(f'visuals/vis_results_{emb_sz}{postfix}_{arch}.png')
+    # plt.savefig(f'visuals/vis_results_{emb_sz}{postfix}_{arch}.png')
 
-    # plt.show()
+    plt.show()
 
 if __name__ == '__main__':
 
     postfix = '_100cl'
     arch = 'mobilenetv3_small'
 
-    for emb_size in [32, 64, 128]:
+    
+
+    for emb_size in [128]:#, 64, 128]:
 
         folder = f'/home/iiwa/Nenakhov/metric_learning/example_saved_models/{arch}_{emb_size}{postfix}'
         fs = os.listdir(folder)
@@ -153,6 +155,8 @@ if __name__ == '__main__':
 
         model = image_embedder(trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
 
+    
+
 
         data = get_embeddings('saved_masks', model)
 
@@ -165,3 +169,23 @@ if __name__ == '__main__':
 
 
         visualize_embeddings(data, emb_size, postfix=f'{postfix}', arch=arch)
+
+
+    model = dino_wrapper()
+
+    data = get_embeddings('saved_masks', model)
+
+    emb_size = 384
+    postfix = ''
+    arch = 'DINO'
+
+        
+    acc = test(data, AccuracyCalculator(include = ("precision_at_1",), k=5))
+
+    with open('test_results', 'a+') as f:
+        f.write(f'emb_sz: {emb_size}, acc: {acc:.3f}{postfix}_{arch}\n')
+        print(f'emb_sz: {emb_size}, acc: {acc:.3f}{postfix}_{arch}\n')
+
+
+    visualize_embeddings(data, emb_size, postfix='', arch='DINO')
+

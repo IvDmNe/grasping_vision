@@ -6,4 +6,5 @@ sudo docker run \
     --rm \
     -v ~/ros_ws:/ws \
     -it \
+    --privileged \
     ivan/cv 

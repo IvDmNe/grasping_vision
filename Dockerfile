@@ -24,7 +24,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # ROS install
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu bionic main" > /etc/apt/sources.list.d/ros-latest.list'
 RUN curl -sSL 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xC1CF6E31E6BADE8868B172B4F42ED6FBAB17C654' | apt-key add -
-RUN apt-get update && apt-get install -y ros-melodic-robot ros-melodic-rosconsole
+RUN apt-get update && apt-get install -y ros-melodic-robot ros-melodic-rosconsole ros-melodic-realsense2-camera
 RUN echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc
 
 # # Anaconda installing
@@ -103,4 +103,3 @@ EXPOSE 11311
 RUN apt-get install ros-melodic-pcl-ros ros-melodic-image-pipeline -y
 
 RUN pip3 install albumentations
-
