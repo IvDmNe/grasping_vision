@@ -9,6 +9,16 @@ from matplotlib import pyplot as plt
 import cv2 as cv
 import numpy as np
 
+class SquarePad:
+	def __call__(self, image):
+		w, h = image.size
+		max_wh = np.max([w, h])
+		hp = int((max_wh - w) / 2)
+		vp = int((max_wh - h) / 2)
+		padding = (hp, vp, hp, vp)
+		return transforms.functional.pad(image, padding, 0, 'constant')
+
+
 
 class feature_extractor(nn.Module):
 
@@ -103,7 +113,8 @@ class dino_wrapper(nn.Module):
 
         self.transforms = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Resize(224),
+            SquarePad(),
+            transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
@@ -112,6 +123,8 @@ class dino_wrapper(nn.Module):
     def forward(self, x):
 
         if isinstance(x, list):
+            # [print(i.shape) for i in x]
+            # print(self.transforms(x[0]).shape)
             x = torch.stack([self.transforms(i) for i in x])
         else:
             x = self.transforms(x)

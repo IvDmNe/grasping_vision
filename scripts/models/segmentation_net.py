@@ -50,7 +50,10 @@ class seg:
         
         new_dir = '/ws/src/grasping_vision/scripts'
         rospy.logwarn(f'current dir: {os.getcwd()}')
-        os.chdir(new_dir)
+        try:    
+            os.chdir(new_dir)
+        except Exception as e:
+            print('Working dir not changed: ', e)
         rospy.logwarn(f'No model weights found in {os.getcwd()}, downloading...')
         if not Path('model_final_f10217.pkl').is_file():
             os.system('wget https://dl.fbaipublicfiles.com/detectron2/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x/137849600/model_final_f10217.pkl')

@@ -20,3 +20,5 @@ scripts/test_data_coil-100.pth
 scripts/datafiles/13_07_data_aug.pth
 
 scripts/datafiles/13_07_data.pth
+*.mp4
+*.avi

@@ -8,7 +8,7 @@ from models.feature_extractor import dino_wrapper, image_embedder
 from models.mlp import MLP
 from models.knn import knn_torch
 from utilities.utils import find_nearest, find_nearest_to_center_cntr, get_centers, \
-                        get_one_mask, get_nearest_to_center_box, get_padded_image,removeOutliers
+    get_one_mask, get_nearest_to_center_box, get_padded_image, removeOutliers
 
 # ROS
 import rospy
@@ -90,12 +90,11 @@ class ImageListener:
 
         emb_size = 64
 
-
         emb_file = 'models/embedder_best1.pth'
         trunk_file = 'models/trunk_best1.pth'
 
-
-        self.embedder = image_embedder(trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
+        self.embedder = image_embedder(
+            trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
 
         self.classifier = knn_torch(
             datafile='datafiles/14_07_data_aug5.pth', knn_size=20)
@@ -104,7 +103,6 @@ class ImageListener:
         # self.classifier = knn_torch(
         #     datafile='datafiles/test_data_own_dino.pth', knn_size=20)
 
-
         ts = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], 1, 0.1)
         ts.registerCallback(self.callback_rgbd)
@@ -112,16 +110,17 @@ class ImageListener:
         self.colors = colormap()
 
         self.transforms = A.Compose(
-           [A.LongestMaxSize(max_size=224),
-            A.PadIfNeeded(min_height=224, min_width=224),
-            A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.3, rotate_limit=180, p=0.5, border_mode=cv.BORDER_CONSTANT),
-            A.RGBShift(r_shift_limit=15, g_shift_limit=15, b_shift_limit=15, p=0.5),
-            A.Perspective(scale=(0.05, 0.2)),
-            A.RandomBrightnessContrast(p=0.5),
-            # A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-            # ToTensorV2(),
-            ])
-
+            [A.LongestMaxSize(max_size=224),
+             A.PadIfNeeded(min_height=224, min_width=224),
+             A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.3,
+                                rotate_limit=180, p=0.5, border_mode=cv.BORDER_CONSTANT),
+             A.RGBShift(r_shift_limit=15, g_shift_limit=15,
+                        b_shift_limit=15, p=0.5),
+             A.Perspective(scale=(0.05, 0.2)),
+             A.RandomBrightnessContrast(p=0.5),
+             # A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+             # ToTensorV2(),
+             ])
 
         rospy.loginfo('Segmentaion node: Init complete')
 
@@ -159,7 +158,7 @@ class ImageListener:
 
         if len(instances.pred_boxes.tensor) == 0:
             rospy.logerr_throttle(2, 'no objects found')
-            return 
+            return
 
         final_masks = []
 
@@ -175,7 +174,6 @@ class ImageListener:
 
             cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
             cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
-            
 
             image_masked = cv.bitwise_and(image, image, mask=cur_mask)
 
@@ -183,7 +181,6 @@ class ImageListener:
 
             final_mask_sq = get_padded_image(final_mask)
 
-            
             final_masks.append(final_mask_sq)
 
         return final_masks, instances.pred_boxes.tensor, instances.pred_masks
@@ -215,11 +212,10 @@ class ImageListener:
             im_shape, boxes.cpu().numpy())
 
         # augment masked images before passing to embedder
-        imgs = [self.transforms(image=images_masked[center_idx])['image'] for _ in range(5)]
-            
-        
-        features = self.embedder(imgs)
+        imgs = [self.transforms(image=images_masked[center_idx])[
+            'image'] for _ in range(5)]
 
+        features = self.embedder(imgs)
 
         # check if bounding box is very different from previous
 
@@ -245,9 +241,6 @@ class ImageListener:
             image = self.im.copy()
             depth = self.depth.copy()
 
-
-
-
         # segment rgb image
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
@@ -256,7 +249,6 @@ class ImageListener:
         # depth = cv.resize(depth, (640 // 2, 480 // 2))
 
         # image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-
 
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
@@ -276,7 +268,7 @@ class ImageListener:
                     # draw bounding box
                     pts = box.detach().cpu().long()
                     cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                                (int(pts[2]), int(pts[3])), c, 2)
+                                 (int(pts[2]), int(pts[3])), c, 2)
 
                     # draw object masks
                     x1, y1, x2, y2 = box.round().long()
@@ -299,10 +291,6 @@ class ImageListener:
                 cl = self.working_mode.split(
                     ' ')[1]
 
-
-                
-
-
                 center_idx = self.save_data(images_masked, image.shape, boxes)
 
                 box = boxes[center_idx]
@@ -313,7 +301,7 @@ class ImageListener:
                 # draw bounding box
                 pts = box.detach().cpu().long()
                 cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                                (int(pts[2]), int(pts[3])), c, 2)
+                             (int(pts[2]), int(pts[3])), c, 2)
 
                 # draw object masks
                 x1, y1, x2, y2 = box.round().long()
@@ -331,14 +319,13 @@ class ImageListener:
                                 1, c, 2)
                 mask = cur_mask
 
-
             elif self.working_mode == 'inference':
                 if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
                     self.feed_features_to_classifier()
 
                 features = self.embedder(images_masked)
                 ret = self.classifier.classify(features)
-                
+
                 if ret:
                     classes, confs, min_dists = ret
 
@@ -352,7 +339,7 @@ class ImageListener:
 
                             # if confidence is less than the threshold, PAINT IT BLACK
                             if min_dist > min_dist_thresh or conf < conf_thresh:
-                                # continue 
+                                # continue
                                 c = (0, 0, 0)
 
                             # draw object masks
@@ -362,8 +349,10 @@ class ImageListener:
                             mask_rs = cv.resize(
                                 m.squeeze().detach().cpu().numpy(), sz)
 
-                            cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
-                            cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+                            cur_mask = np.zeros(
+                                (image.shape[:-1]), dtype=np.uint8)
+                            cur_mask[y1:y2, x1:x2] = (
+                                mask_rs + 0.5).astype(int)
                             cntrs, _ = cv.findContours(
                                 cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
@@ -371,17 +360,17 @@ class ImageListener:
                                             1, c, 2)
                             # if confidence is less than the threshold, don't draw label and confidence
                             # if min_dist > min_dist_thresh or conf < conf_thresh:
-                            #     continue               
+                            #     continue
                             # draw bounding box
                             pts = box.detach().cpu().long()
                             cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                                        (int(pts[2]), int(pts[3])), c, 2)
+                                         (int(pts[2]), int(pts[3])), c, 2)
 
                             # draw label
                             pt = (box[:2].round().long()) - 2
                             pt = (int(pt[0]), int(pt[1]))
                             cv.putText(image_segmented, f'{cl} {conf:.2f} {min_dist:.2f}', pt,
-                                    cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
+                                       cv.FONT_HERSHEY_SIMPLEX, 0.8, c, 2)
 
                         mask = get_one_mask(
                             boxes.cpu().int().numpy(), pred_masks, image).astype(np.uint8)
@@ -392,20 +381,18 @@ class ImageListener:
                 demand_class = self.working_mode.split(' ')[1]
                 rospy.logwarn(f'Command: {self.working_mode}')
                 self.working_mode = 'inference'
-                classes, confs, dists = self.classifier.classify(features.squeeze())
-
+                classes, confs, dists = self.classifier.classify(
+                    features.squeeze())
 
                 if isinstance(classes, str):
                     classes = [classes]
                 if classes:
 
                     # threshold predictions
-                    class_idxs = [idx for idx, (cl, conf, dist) in enumerate(zip(classes, confs, dists)) if (conf > 0.8 and dist < 0.2)]
+                    class_idxs = [idx for idx, (cl, conf, dist) in enumerate(
+                        zip(classes, confs, dists)) if (conf > 0.8 and dist < 0.2)]
                     high_propb_classes = [classes[i] for i in class_idxs]
                     # rospy.logwarn(classes)
-
-
-
 
                     if not (demand_class in high_propb_classes):
                         rospy.logwarn(
@@ -423,19 +410,18 @@ class ImageListener:
                 # remove known class
 
                 self.classifier.remove_class(self.working_mode.split(' ')[1])
-                
 
-                rospy.logwarn(f'Class "{self.working_mode.split(" ")[1]}" removed')
+                rospy.logwarn(
+                    f'Class "{self.working_mode.split(" ")[1]}" removed')
                 self.working_mode = 'inference'
-                
 
             else:
                 rospy.logerr_throttle(
                     1, f'invalid working mode: {self.working_mode}')
                 # return
-        
-        self.send_images_to_topics(self.image_masked, self.depth_masked, image_segmented)
 
+        self.send_images_to_topics(
+            self.image_masked, self.depth_masked, image_segmented)
 
         end = time.time()
         fps = 1 / (end - start)
@@ -467,7 +453,7 @@ class ImageListener:
             self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
                 1]] * self.x_data_to_save.shape[0])
         else:
-            rospy.logwarn_throttle(5,'No features were saved')
+            rospy.logwarn_throttle(5, 'No features were saved')
 
         self.x_data_to_save = None
         self.prev_mode = 'inference'

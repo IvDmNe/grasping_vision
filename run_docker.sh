@@ -5,6 +5,7 @@ sudo docker run \
     --gpus all \
     --rm \
     -v ~/ros_ws:/ws \
+    -v /dev:/dev \
     -it \
     --privileged \
     ivan/cv 
