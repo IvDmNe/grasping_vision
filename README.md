@@ -28,8 +28,12 @@ Build docker image
 
 
 # Run
-Run realsense with ROS:
-```roslaunch launch launch/rs_aligned_depth.launch```
+<!-- Run realsense with ROS:
+```roslaunch launch launch/rs_aligned_depth.launch``` -->
+
+Run ROS core:
+```roscore```
+
 
 (Opionally) Open rviz: ```rviz -d rviz_config.rviz```
 
