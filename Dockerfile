@@ -39,14 +39,14 @@ RUN echo "source /opt/ros/melodic/setup.bash" >> /root/.bashrc
 
 
 RUN apt-get update && apt-get install -y \
-	python3-opencv ca-certificates python3-dev git wget sudo ninja-build
+    python3-opencv ca-certificates python3-dev git wget sudo ninja-build
 # RUN ln -sv /usr/bin/python3 /usr/bin/python
 
 # RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
 
 RUN wget https://bootstrap.pypa.io/get-pip.py && \
-	python3 get-pip.py && \
-	rm get-pip.py
+    python3 get-pip.py && \
+    rm get-pip.py
 
 # RUN python3 -m pip install --upgrade pip==3.8.5
 
@@ -76,20 +76,20 @@ RUN mkdir -p /cv_bridge_ws/src && \
     git clone https://github.com/IvDmNe/vision_opencv.git && \
     cd /cv_bridge_ws && \
     catkin config \
-        -DPYTHON_EXECUTABLE=/usr/bin/python3 \
-        -DPYTHON_INCLUDE_DIR=/usr/include/python3.6m \
-        -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.6m.so \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DSETUPTOOLS_DEB_LAYOUT=OFF \
-        -Drosconsole_DIR=/opt/ros/melodic/share/rosconsole/cmake \
-        -Drostime_DIR=/opt/ros/melodic/share/rostime/cmake \
-        -Droscpp_traits_DIR=/opt/ros/melodic/share/roscpp_traits/cmake \
-        -Dstd_msgs_DIR=/opt/ros/melodic/share/std_msgs/cmake \
-        -Droscpp_serialization_DIR=/opt/ros/melodic/share/roscpp_serialization/cmake \
-        -Dmessage_runtime_DIR=/opt/ros/melodic/share/message_runtime/cmake \
-        -Dgeometry_msgs_DIR=/opt/ros/melodic/share/geometry_msgs/cmake \
-        -Dsensor_msgs_DIR=/opt/ros/melodic/share/sensor_msgs/cmake \
-        -Dcpp_common_DIR=/opt/ros/melodic/share/cpp_common/cmake && \
+    -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+    -DPYTHON_INCLUDE_DIR=/usr/include/python3.6m \
+    -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.6m.so \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DSETUPTOOLS_DEB_LAYOUT=OFF \
+    -Drosconsole_DIR=/opt/ros/melodic/share/rosconsole/cmake \
+    -Drostime_DIR=/opt/ros/melodic/share/rostime/cmake \
+    -Droscpp_traits_DIR=/opt/ros/melodic/share/roscpp_traits/cmake \
+    -Dstd_msgs_DIR=/opt/ros/melodic/share/std_msgs/cmake \
+    -Droscpp_serialization_DIR=/opt/ros/melodic/share/roscpp_serialization/cmake \
+    -Dmessage_runtime_DIR=/opt/ros/melodic/share/message_runtime/cmake \
+    -Dgeometry_msgs_DIR=/opt/ros/melodic/share/geometry_msgs/cmake \
+    -Dsensor_msgs_DIR=/opt/ros/melodic/share/sensor_msgs/cmake \
+    -Dcpp_common_DIR=/opt/ros/melodic/share/cpp_common/cmake && \
     cd src && git clone https://github.com/ros/catkin.git &&  cd .. && \
     catkin config --install && \
     catkin build cv_bridge && \
@@ -103,3 +103,6 @@ EXPOSE 11311
 RUN apt-get install ros-melodic-pcl-ros ros-melodic-image-pipeline -y
 
 RUN pip3 install albumentations
+
+RUN pip install netifaces && \
+    export ROS_HOSTNAME=localhost 
