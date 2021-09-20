@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find grasping_vision)/launch/rs_aligned_depth.launch"/>
+    <node name="segmentation_node" type="only_segmentation_node.py" pkg="grasping_vision"/>
+</launch>
