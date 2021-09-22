@@ -3,10 +3,10 @@
 
 # this project packages
 from torchvision.transforms.functional import perspective
-from models.segmentation_net import seg
-from models.feature_extractor import dino_wrapper, image_embedder
-from models.mlp import MLP
-from models.knn import knn_torch
+from dl_models.segmentation_net import seg
+from dl_models.feature_extractor import dino_wrapper, image_embedder
+from dl_models.mlp import MLP
+from dl_models.knn import knn_torch
 from utilities.utils import find_nearest, find_nearest_to_center_cntr, get_centers, \
     get_one_mask, get_nearest_to_center_box, get_padded_image, removeOutliers
 
@@ -34,6 +34,9 @@ import re
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from scipy.spatial.distance import euclidean
+import os
+
+from utilities.utils import iou
 
 torch.set_grad_enabled(False)
 
@@ -44,6 +47,12 @@ lock = threading.Lock()
 freq = 100
 conf_thresh = 0.8
 min_dist_thresh = 0.2
+
+
+base_iou_thresh = 0.8
+iou_decay = 0.05
+
+root_folder = 'saved_images'
 
 
 class ImageListener:
@@ -63,6 +72,9 @@ class ImageListener:
         self.prev_training_mask_info = None
         self.x_data_to_save = None
         self.prev_mode = 'inference'
+
+        self.last_box = []
+        self.iou_thresh = base_iou_thresh
 
         self.cv_bridge = CvBridge()
 
@@ -90,18 +102,19 @@ class ImageListener:
 
         emb_size = 64
 
-        emb_file = 'models/embedder_best1.pth'
-        trunk_file = 'models/trunk_best1.pth'
+        emb_file = 'dl_models/embedder_best1.pth'
+        trunk_file = 'dl_models/trunk_best1.pth'
 
-        self.embedder = image_embedder(
-            trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
+        # self.embedder = image_embedder(
+        #     trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
 
-        self.classifier = knn_torch(
-            datafile='datafiles/14_07_data_aug5.pth', knn_size=20)
-
-        # self.embedder = dino_wrapper()
+        # self.classifier = knn_torch('21_09.pth')
         # self.classifier = knn_torch(
-        #     datafile='datafiles/test_data_own_dino.pth', knn_size=20)
+        #     datafile='datafiles/14_07_data_aug5.pth', knn_size=20)
+
+        self.embedder = dino_wrapper()
+        self.classifier = knn_torch(
+            datafile='datafiles/test_data_own_21_09_dino.pth', knn_size=20)
 
         ts = message_filters.ApproximateTimeSynchronizer(
             [rgb_sub, depth_sub], 1, 0.1)
@@ -206,33 +219,29 @@ class ImageListener:
             mask_msg.encoding = 'bgr8'
             self.segmented_view_pub.publish(mask_msg)
 
-    def save_data(self, images_masked, im_shape, boxes):
-
-        center_idx = get_nearest_to_center_box(
-            im_shape, boxes.cpu().numpy())
+    def save_data(self, cropped_image):
 
         # augment masked images before passing to embedder
-        imgs = [self.transforms(image=images_masked[center_idx])[
+        imgs = [self.transforms(image=cropped_image)[
             'image'] for _ in range(5)]
 
         features = self.embedder(imgs)
 
         # check if bounding box is very different from previous
 
-        if self.check_sim(boxes[center_idx].cpu().numpy()):
-            if self.x_data_to_save is None:
-                self.x_data_to_save = features.squeeze()
-            else:
-                self.x_data_to_save = torch.cat(
-                    [self.x_data_to_save, features.squeeze()])
-        return center_idx
+        if self.x_data_to_save is None:
+            self.x_data_to_save = features.squeeze()
+        else:
+            self.x_data_to_save = torch.cat(
+                [self.x_data_to_save, features.squeeze()])
+        print(self.x_data_to_save.shape)
 
     def run_proc(self):
 
         start = time.time()
 
-        image_masked = None
-        depth_masked = None
+        # image_masked = None
+        # depth_masked = None
 
         with lock:
             if self.im is None:
@@ -245,20 +254,13 @@ class ImageListener:
         image = cv.resize(image, (640, 480))
         depth = cv.resize(depth, (640, 480))
 
-        # image = cv.resize(image, (640 // 2, 480 // 2))
-        # depth = cv.resize(depth, (640 // 2, 480 // 2))
-
-        # image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-
         image_segmented = image.copy()
         ret_seg = self.do_segmentation(image)
         if ret_seg:
             images_masked, boxes, pred_masks = ret_seg
-        # else:
-        #     return
 
-            # filter depth by 1 meter
-            depth[depth > 1.0] = 1.0
+            # filter depth by 1.5 meter
+            depth[depth > 1.5] = 1.5
 
             if self.classifier.y_data is None:
                 # draw contours of found objects
@@ -287,43 +289,90 @@ class ImageListener:
 
             # choose action according to working mode
             if self.working_mode.split(' ')[0] == 'train':
-                # choose only the nearest bbox to the center
-                cl = self.working_mode.split(
-                    ' ')[1]
+                label = self.working_mode.split(' ')[1]
+                if len(self.last_box) != 0:
+                    cv.rectangle(image_segmented, (int(self.last_box[0]), int(self.last_box[1])),
+                                 (int(self.last_box[2]), int(self.last_box[3])), (0, 255, 255), 2)
 
-                center_idx = self.save_data(images_masked, image.shape, boxes)
+                cent_idx = get_nearest_to_center_box(
+                    image.shape, boxes.detach().cpu().numpy())
 
-                box = boxes[center_idx]
-                m = pred_masks[center_idx]
+                for ix, (box, m) in enumerate(zip(boxes, pred_masks)):
 
-                c = (255, 0, 0)
+                    box = box.cpu().detach().long().numpy()
+                    iou_n = 0
+                    if cent_idx == ix:
+                        if len(self.last_box) != 0:
+                            iou_n = iou(self.last_box,
+                                        np.expand_dims(box, axis=0))
 
-                # draw bounding box
-                pts = box.detach().cpu().long()
-                cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
-                             (int(pts[2]), int(pts[3])), c, 2)
+                            if iou_n > self.iou_thresh:
+                                self.last_box = box
+                        else:
+                            self.last_box = box
 
-                # draw object masks
-                x1, y1, x2, y2 = box.round().long()
-                sz = (int(x2 - x1), int(y2 - y1))
+                    c = (255, 0, 0) if (
+                        ix == cent_idx) and iou_n > self.iou_thresh else (0, 0, 255)
 
-                mask_rs = cv.resize(
-                    m.squeeze().detach().cpu().numpy(), sz)
+                    if (ix == cent_idx) and iou_n > self.iou_thresh:
+                        self.iou_thresh = base_iou_thresh
 
-                cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
-                cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
-                cntrs, _ = cv.findContours(
-                    cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+                    if (ix == cent_idx) and iou_n < self.iou_thresh:
+                        self.iou_thresh -= iou_decay
 
-                cv.drawContours(image_segmented, cntrs, -
-                                1, c, 2)
-                mask = cur_mask
+                    # draw bounding box
+                    pts = box
+                    cv.rectangle(image_segmented, (int(pts[0]), int(pts[1])),
+                                 (int(pts[2]), int(pts[3])), c, 2)
+
+                    # draw object masks
+                    x1, y1, x2, y2 = box
+                    sz = (int(x2 - x1), int(y2 - y1))
+
+                    mask_rs = cv.resize(
+                        m.squeeze().detach().cpu().numpy(), sz)
+
+                    cur_mask = np.zeros((image.shape[:-1]), dtype=np.uint8)
+                    cur_mask[y1:y2, x1:x2] = (mask_rs + 0.5).astype(int)
+                    cntrs, _ = cv.findContours(
+                        cur_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+                    cv.drawContours(image_segmented, cntrs, -
+                                    1, c, 2)
+
+                    if iou_n > self.iou_thresh:
+                        mask = cur_mask
+
+                        mask[mask == 1] = 255
+                        masked_im = cv.bitwise_and(image, image, mask=mask)
+
+                        cropped = masked_im[y1:y2, x1:x2]
+
+                        self.save_data(cropped)
+
+                        # save images
+                        if not os.path.exists(root_folder):
+                            os.mkdir(root_folder)
+                        if not os.path.exists(f'{root_folder}/{label}'):
+                            os.mkdir(
+                                f'{root_folder}/{label}')
+
+                        cv.imwrite(
+                            f'{root_folder}/{label}/{time.time()}.png', cropped)
+
+                        # self.x_data_to_save.append(self.embedder(cropped))
+
+                        # cv.imshow('mask', cropped)
+                        # cv.waitKey()
+                        # cv.destroyAllWindows()
+                        # exit()
 
             elif self.working_mode == 'inference':
                 if self.prev_mode.split(' ')[0] == 'train' and self.working_mode == 'inference':
                     self.feed_features_to_classifier()
 
                 features = self.embedder(images_masked)
+
                 ret = self.classifier.classify(features)
 
                 if ret:
@@ -452,6 +501,8 @@ class ImageListener:
 
             self.classifier.add_points(self.x_data_to_save, [self.prev_mode.split(' ')[
                 1]] * self.x_data_to_save.shape[0])
+
+            rospy.logwarn('Features saved')
         else:
             rospy.logwarn_throttle(5, 'No features were saved')
 

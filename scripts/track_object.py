@@ -31,8 +31,8 @@ import numpy as np
 
 from utilities.sort import *
 
-from deep_sort.deep_sort import DeepSort
-from deep_sort.sort.iou_matching import iou
+# from deep_sort.deep_sort import DeepSort
+# from deep_sort.sort.iou_matching import iou
 torch.set_grad_enabled
 
 setup_logger()
@@ -110,17 +110,6 @@ class ImageListener:
 
     def callback_rgbd(self, rgb, depth):
         self.depth_encoding = depth.encoding
-        # if depth.encoding == '32FC1':
-        #     depth_cv = self.cv_bridge.imgmsg_to_cv2(depth)
-        # elif depth.encoding == '16UC1':
-        #     depth_cv = self.cv_bridge.imgmsg_to_cv2(
-        #         depth).copy().astype(np.float32)
-        #     depth_cv /= 1000.0
-        # else:
-        #     rospy.logerr_throttle(
-        #         1, 'Unsupported depth type. Expected 16UC1 or 32FC1, got {}'.format(
-        #             depth.encoding))
-        #     return
 
         im = self.cv_bridge.imgmsg_to_cv2(rgb, 'bgr8')
 
@@ -223,9 +212,9 @@ class ImageListener:
         w = (dets[:, 2] - dets[:, 0])
         h = (dets[:, 3] - dets[:, 1])
 
-        dets_xywh = np.stack((x, y, w, h)).T
+        # dets_xywh = np.stack((x, y, w, h)).T
 
-        confs = np.ones((dets.shape[0], 1))
+        # confs = np.ones((dets.shape[0], 1))
         # tracker_data = self.tracker.update(np.concatenate((dets, confs), axis=1))
         # tracker_data = self.tracker.update(dets_xywh, confs, image)
 

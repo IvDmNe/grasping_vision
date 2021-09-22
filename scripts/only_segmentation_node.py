@@ -80,19 +80,6 @@ class ImageListener:
 
         self.colors = colormap()
 
-        self.transforms = A.Compose(
-            [A.LongestMaxSize(max_size=224),
-             A.PadIfNeeded(min_height=224, min_width=224),
-             A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.3,
-                                rotate_limit=180, p=0.5, border_mode=cv.BORDER_CONSTANT),
-             A.RGBShift(r_shift_limit=15, g_shift_limit=15,
-                        b_shift_limit=15, p=0.5),
-             A.Perspective(scale=(0.05, 0.2)),
-             A.RandomBrightnessContrast(p=0.5),
-             # A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
-             # ToTensorV2(),
-             ])
-
         rospy.loginfo('Segmentaion node: Init complete')
 
     def callback_rgb(self, rgb):

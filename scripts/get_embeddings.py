@@ -4,12 +4,13 @@ import torch
 from matplotlib import pyplot as plt
 
 
-from models.feature_extractor import image_embedder
-from models.knn import *
+from dl_models.feature_extractor import dino_wrapper, image_embedder
+from dl_models.knn import *
 
 import re
 
 torch.set_grad_enabled(False)
+
 
 def get_embeddings(folder, model):
     embs = None
@@ -21,7 +22,6 @@ def get_embeddings(folder, model):
             if f.endswith('.png'):
                 im = cv.imread(root + '/' + f, cv.IMREAD_COLOR)
                 im = cv.cvtColor(im, cv.COLOR_BGR2RGB)
-
 
                 # plt.imshow(im)
                 # plt.show()
@@ -41,27 +41,27 @@ def get_embeddings(folder, model):
     return embs, labels
 
 
-
 if __name__ == '__main__':
-    image_folder = 'saved_masks'
+    image_folder = 'saved_images'
 
     emb_size = 64
-    postfix = '_100cl'
+    postfix = '21_09_dino'
 
-    folder = f'/home/iiwa/Nenakhov/metric_learning/example_saved_models/mobilenetv3_small_{emb_size}{postfix}'
-    fs = os.listdir(folder)
+    # folder = f'/home/iiwa/Nenakhov/metric_learning/example_saved_models/mobilenetv3_small_{emb_size}{postfix}'
+    # fs = os.listdir(folder)
 
-    r = re.compile("embedder_best")
-    emb_file = folder + '/' + list(filter(r.match, fs))[0]
+    # r = re.compile("embedder_best")
+    # emb_file = folder + '/' + list(filter(r.match, fs))[0]
 
-    r = re.compile("trunk_best")
-    trunk_file = folder + '/' + list(filter(r.match, fs))[0]
+    # r = re.compile("trunk_best")
+    # trunk_file = folder + '/' + list(filter(r.match, fs))[0]
 
-    model = image_embedder(trunk_file=trunk_file, emb_file=emb_file, emb_size=emb_size)
+    # model = image_embedder(trunk_file=trunk_file,
+    #                        emb_file=emb_file, emb_size=emb_size)
+    model = dino_wrapper()
 
     clf = knn_torch(
-            datafile=f'datafiles/test_data_own_{emb_size}{postfix}.pth')
-
+        datafile=f'datafiles/test_data_own_{postfix}.pth')
 
     embs = None
     labels = []
@@ -72,7 +72,6 @@ if __name__ == '__main__':
             if f.endswith('.png'):
                 im = cv.imread(root + '/' + f, cv.IMREAD_COLOR)
                 im = cv.cvtColor(im, cv.COLOR_BGR2RGB)
-
 
                 # plt.imshow(im)
                 # plt.show()
@@ -85,19 +84,12 @@ if __name__ == '__main__':
                 else:
                     embs = torch.cat(
                         [embs, emb.squeeze().unsqueeze(0)])
-                label = f.split('_')[0]
+                label = root.split('/')[-1]
+                # label = f.split('_')[0]
                 labels.append(label)
 
                 print(embs.shape)
 
-
-
                 # print(emb.shape)
 
     clf.add_points(embs, labels)
-
-
-
-
-        
-
