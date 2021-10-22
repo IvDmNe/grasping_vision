@@ -390,7 +390,7 @@ class ImageListener:
 
                     # threshold predictions
                     class_idxs = [idx for idx, (cl, conf, dist) in enumerate(
-                        zip(classes, confs, dists)) if (conf > 0.8 and dist < 0.2)]
+                        zip(classes, confs, dists)) if (conf > conf_thresh and dist < min_dist_thresh)]
                     high_propb_classes = [classes[i] for i in class_idxs]
                     # rospy.logwarn(classes)
 
